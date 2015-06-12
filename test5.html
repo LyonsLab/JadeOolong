@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>JBrowse 3D v.0.01</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<audio autoplay=true>
+    <source src="5HTT.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js_mod/VRControls.js"></script>
+<script src="js/VREffect.js"></script>
+
+<script>
+/*
+ Setup three.js WebGL renderer
+ */
+var renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+/*
+ Append the canvas element created by the renderer to document body element.
+ */
+document.body.appendChild( renderer.domElement );
+
+/*
+ Create a three.js scene
+ */
+var scene = new THREE.Scene();
+
+/*
+ Create a three.js camera
+ */
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+camera.rotation.y = ( 45 * Math.PI / 180 );
+//camera.position.x = -1;
+camera.position.y = 1;
+
+/*
+ Apply VR headset orientation and positional to camera.
+ */
+var controls = new THREE.VRControls( camera );
+
+/*
+ Apply VR stereo rendering to renderer.
+ */
+var effect = new THREE.VREffect( renderer );
+effect.setSize( window.innerWidth, window.innerHeight );
+
+/*
+ Build URLs
+ */
+var start_loc = 23900;  // 23900 good practice value
+var end_loc = 31000;    // 31000 good practice value
+var seq_url = 'https://genomevolution.org/coge/api/v1/jbrowse/sequence/16911/features/1?start=' + start_loc + '&end=' + end_loc;
+var feat_url = 'https://genomevolution.org/coge/api/v1/jbrowse/track/annotation/16911/features/1?start=' + start_loc + '&end=' + end_loc;
+var exp_url = 'https://genomevolution.org/coge/api/v1/jbrowse/experiment/34/features/1?basesPerSpan=4.495483870967742&scale=0.22244546498277842&start=' + start_loc + '&end=' + end_loc;
+//var exp_url = 'https://genomevolution.org/coge/api/v1/jbrowse/experiment/260/features/1?basesPerSpan=100&scale=0.01&start=' + start_loc + '&end=' + end_loc;
+
+
+/*
+ Define some global variables.
+ */
+var seqData;
+var featData;
+var feat_blocks = new Array();
+var feat_group = new THREE.Object3D();
+var expData;
+var exp_blocks = new Array();
+var exp_group = new THREE.Object3D();
+var height_scale = 1;
+
+
+//var light = new THREE.AmbientLight( 0x404040 ); // soft white light
+//scene.add( light );
+
+/*
+ Sequence Data
+ */
+
+/* Base function, assigns coloring indices. */
+var base = function(base) {
+    if (base == 'A') {
+        //this.baseColor = 'green';
+        this.matIndex = 0;
+    } else if (base == 'T') {
+        //this.baseColor = 'red';
+        this.matIndex = 1;
+    } else if (base == 'C') {
+        //this.baseColor = 'blue';
+        this.matIndex = 2;
+    } else if (base == 'G') {
+        //this.baseColor = 'yellow';
+        this.matIndex = 3;
+    } else {
+        //this.baseColor = 'black';
+        this.matIndex = 4;
+    }
+};
+
+/* Build sequence track ("path") */
+var path = new THREE.Object3D();
+$.ajax({
+    type: 'GET',
+    url: seq_url,
+    dataType: 'json',
+    success: function(data) {
+        seqData = data.features[0].seq;}
+}).complete(function() {
+    //console.log(seqData);
+    /* Horizontal sequence track geometry */
+    var seqGeo = new THREE.PlaneGeometry(0.1 * seqData.length, 3, seqData.length);
+    /* Vertical sequence track geometry */
+    var seqGeoV = new THREE.PlaneGeometry(0.1 * seqData.length, 3, seqData.length);
+    /* End cap geometry */
+    var endCapGeo = new THREE.PlaneGeometry(3, 3);
+
+    /* Build an array of different colors for each base */
+    var materials = [
+        new THREE.MeshBasicMaterial( { color: 'green', side: THREE.DoubleSide, opacity: 1.0} ),    // G --> A
+        new THREE.MeshBasicMaterial( { color: 'red', side: THREE.DoubleSide, opacity: 1.0} ),      // R --> T
+        new THREE.MeshBasicMaterial( { color: 'blue', side: THREE.DoubleSide, opacity: 1.0} ),     // B --> C
+        new THREE.MeshBasicMaterial( { color: 'yellow', side: THREE.DoubleSide, opacity: 1.0} ),   // Y --> G
+        new THREE.MeshBasicMaterial( { color: 'cyan', side: THREE.DoubleSide, opacity: 1.0} )      // NA
+    ];
+
+    /* Assign correct colors to each track segment */
+    var c = 0;
+    for (var i = 0, len = seqData.length; i < len; i++) {
+        var currentBase = new base(seqData[i]);
+        seqGeo.faces[c].materialIndex = currentBase.matIndex;
+        seqGeo.faces[c + 1].materialIndex = currentBase.matIndex;
+        seqGeoV.faces[c].materialIndex = currentBase.matIndex;
+        seqGeoV.faces[c + 1].materialIndex = currentBase.matIndex;
+        c += 2
+    }
+
+    /* Build and position horizontal sequence track */
+    var sequence_track = new THREE.Mesh( seqGeo, new THREE.MeshFaceMaterial(materials));
+    sequence_track.position.z = - (0.1 * seqData.length) / 2;
+    sequence_track.position.x = 0;
+    sequence_track.position.y = 0;
+    sequence_track.rotation.x = ( 90 * Math.PI / 180 );
+    sequence_track.rotation.z = ( 270 * Math.PI / 180 );
+    path.add(sequence_track);
+
+    /* Build and position vertical sequence track */
+    var sequence_track_V = new THREE.Mesh( seqGeo, new THREE.MeshFaceMaterial(materials));
+    sequence_track_V.position.z = - (0.1 * seqData.length) / 2;
+    sequence_track_V.position.x = -1.5;
+    sequence_track_V.position.y = -1.5;
+    sequence_track_V.rotation.x = ( 90 * Math.PI / 180 );
+    sequence_track_V.rotation.y = ( 90 * Math.PI / 180 );
+    sequence_track_V.rotation.z = ( 270 * Math.PI / 180 );
+    path.add(sequence_track_V);
+
+    /* Build and position end cap */
+    var endCapMaterial = new THREE.MeshBasicMaterial( {color: 'black', side: THREE.DoubleSide});
+    var endCap = new THREE.Mesh( endCapGeo, endCapMaterial )
+    endCap.position.y = -1.5
+    path.add( endCap )
+});
+
+scene.add(path);
+
+/*
+ Feature Data
+ */
+$.ajax({
+    type: 'GET',
+    url: feat_url,
+    datatype: 'JSON',
+    success: function(data) {
+        featData = data;
+    }
+}).complete(function() {
+    //console.log(featData);
+    var geneNumber = 0
+    featData.features.forEach(function(annot) {
+        if (annot.type == 'gene') {
+            console.log(annot);
+            var gene_start = annot.start - start_loc;
+            /*if (gene_start < 0) {
+                gene_start *= -1;
+            }*/
+            var length = annot.start - annot.end + 1;
+            var height = 1 + geneNumber
+            var geneGeo = new THREE.BoxGeometry(0.1, height, length * 0.1);
+            var geneMat = new THREE.MeshBasicMaterial({color: 'purple'});
+            var geneMesh = new THREE.Mesh( geneGeo, geneMat);
+
+            geneMesh.position.x = -1.55;
+            geneMesh.position.y = height / 2;
+            if (gene_start >= 0) {
+                geneMesh.position.z = - ((gene_start + 0.5*length) * 0.1);
+            } else {
+                geneMesh.position.z = (((-1*gene_start) + 0.5*length) * 0.1);
+            }
+
+            feat_blocks.push(geneMesh);
+            feat_group.add(geneMesh);
+            geneNumber++;
+        }
+    })
+})
+scene.add(feat_group)
+
+/*
+ Experiment Data
+ */
+$.ajax({
+    type: 'GET',
+    url: exp_url,
+    dataType: 'json',
+//              data: {},
+    success : function(data) {
+        //console.log(data)
+        expData = data;
+    }
+}).complete(function() {
+    //console.log(expData);
+    expData.features.forEach(function(feat) {
+        //console.log(feat);
+        var feat_start = (feat.start - start_loc);
+        var length = (feat.end - feat.start + 1);
+        var height = feat.score * height_scale;
+        var geometry = new THREE.BoxGeometry( 0.1 , height, length * 0.1 );
+        var material;
+        if (feat.score < 0) {
+            material = new THREE.MeshBasicMaterial({color:'red'});
+        }
+        else {
+            material = new THREE.MeshBasicMaterial({color:'green'});
+        }
+        var block = new THREE.Mesh(geometry, material);
+
+        block.position.x = 1.55;
+        block.position.y = height / 2;
+        block.position.z = - (feat_start + (0.5*length))*0.1;
+
+        exp_group.add(block);
+        exp_blocks.push(block);
+    })
+});
+
+scene.add(exp_group);
+
+/*
+ Establish Mouse Controls
+ */
+$(window).bind('DOMMouseScroll', function(e){
+    //console.log(e.originalEvent);
+    var zoom = e.originalEvent.detail/50;
+
+    // Move Left/Right
+    if(e.originalEvent.axis == 1) {
+        //group.translateX(zoom);
+        //camera.translateX(zoom);
+        //scene.translateX(zoom);
+    }
+    // Move Up/Down
+    else {
+        //group.translateZ(zoom);
+        //camera.translateZ(zoom);
+        scene.translateZ(zoom);
+    }
+
+    animate();
+});
+
+/*
+ Request animation frame loop function
+ */
+function animate() {
+
+    /*
+     Update VR headset position and apply to camera.
+     */
+    controls.update();
+
+    /*
+     Render the scene through the VREffect.
+     */
+    effect.render( scene, camera );
+
+    requestAnimationFrame( animate );
+}
+
+/*
+ Kick off animation loop
+ */
+animate();
+
+/*
+ Listen for double click event to enter full-screen VR mode
+ */
+document.body.addEventListener( 'dblclick', function() {
+    effect.setFullScreen( true );
+});
+
+/*
+ Listen for keyboard events
+ - z: zero positional sensor.
+ - up arrow: move forward on Z axis
+ - down arrow: move backward on Z axis
+ - left arrow: move to left of path, dynamically resize feature tracks
+ - right arrow: move back towards path.
+ */
+function onkey(event) {
+    event.preventDefault();
+    movement = 1;
+
+    if (event.keyCode == 90) { // z
+        controls.resetSensor();
+    }
+    else if (event.keyCode == 38) { //Up Arrow
+        scene.translateZ(movement);
+    }
+    else if (event.keyCode == 40) { //Down Arrow
+        scene.translateZ(-movement);
+    }
+    else if (event.keyCode == 37) { //Left Arrow
+        scene.translateX(movement);
+        //height_scale += 1;
+        exp_blocks.forEach(function(block) {
+            //console.log(block)
+            block.scale.y += 1;
+            block.position.y = (block.geometry.parameters.height * block.scale.y) /2;
+        })
+
+        feat_blocks.forEach(function(block) {
+            //console.log(block)
+            block.scale.y += 0.03;
+            block.position.y = (block.geometry.parameters.height * block.scale.y / 2);
+        })
+    }
+    else if (event.keyCode == 39) { //Right Arrow
+        if (scene.position.x >= 0) {
+            scene.translateX(-movement);
+            exp_blocks.forEach(function(block) {
+                //console.log(block)
+                block.scale.y -= 1;
+                block.position.y = (block.geometry.parameters.height * block.scale.y) /2;
+            })
+
+            feat_blocks.forEach(function(block) {
+                //console.log(block)
+                block.scale.y -= 0.03;
+                block.position.y = (block.geometry.parameters.height * block.scale.y / 2);
+            })
+        }}
+};
+
+window.addEventListener("keydown", onkey, true);
+
+
+/*
+ Handle window resizes
+ */
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    effect.setSize( window.innerWidth, window.innerHeight );
+}
+
+window.addEventListener( 'resize', onWindowResize, false );
+
+</script>
+</body>
+</html>

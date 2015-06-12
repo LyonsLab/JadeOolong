@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>Basic Three.js VR boilerplate</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+</body>
+
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js_mod/VRControls.js"></script>
+<script src="js/VREffect.js"></script>
+<!-- <script src="http://mrdoob.github.io/three.js/examples/fonts/helvetiker_regular.typeface.js"></script> -->
+
+<script>
+/*
+ Setup three.js WebGL renderer
+ */
+var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+/*
+ Append the canvas element created by the renderer to document body element.
+ */
+document.body.appendChild( renderer.domElement );
+/*
+ Create a three.js scene
+ */
+var scene = new THREE.Scene();
+/*
+ Create a three.js camera
+ */
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 100 );
+camera.position.x = 10;
+camera.position.y = 10;
+camera.position.z = 10;
+//camera.rotation.x = ( 45 * Math.PI / 180 );
+//camera.rotation.y = ( 45 * Math.PI / 180 );
+
+/*
+ Apply VR headset orientation and positional to camera.
+ */
+var controls = new THREE.VRControls( camera );
+/*
+ Apply VR stereo rendering to renderer
+ */
+var effect = new THREE.VREffect( renderer );
+effect.setSize( window.innerWidth, window.innerHeight );
+/*
+ Create 3d objects
+ */
+var scaleFactor = 0.00000001;
+
+
+var ch1Length = 4639675; // Y
+var ch2Length = 4686137; // X
+var ch3Length = 4600755; // Z
+var axisWidth = 0.05;
+
+/*
+ Origin
+ */
+var ogGeo = new THREE.BoxGeometry( axisWidth, axisWidth, axisWidth );
+var ogMat = new THREE.MeshBasicMaterial({color: 0x119911});
+var origin = new THREE.Mesh( ogGeo, ogMat );
+origin.position.x = -(axisWidth / 2);
+origin.position.y = -(axisWidth / 2);
+origin.position.z = -(axisWidth / 2);
+scene.add( origin );
+
+
+/*
+ Chromosomes
+ */
+
+function sortNumber(a,b) {
+    return a - b;
+}
+
+var xID = "7057"; // Dog
+var yID = "25712"; // Human
+var zID = "11691"; // Chimp
+
+var xChr = new Array();
+var xAxis = new THREE.Object3D();
+
+var yChr = new Array();
+var yAxis = new THREE.Object3D();
+
+var zChr = new Array();
+var zAxis = new THREE.Object3D();
+
+var grid = new THREE.Object3D();
+var gridToggle = true;
+
+$.ajax({
+    type: 'GET',
+    url: './misc/chimp_dog.json',
+    dataType: 'json',
+    success: function(data) {
+        xChr = data["genomes"][xID]["chromosomes"];
+        zChr = data["genomes"][zID]["chromosomes"];
+    }
+}).complete( $.ajax({
+    type: 'GET',
+    url: './misc/human_dog.json',
+    dataType: 'json',
+    success: function(data) {
+        yChr = data["genomes"][yID]["chromosomes"];
+    }
+}).complete( function() {
+    xChr.sort(function(a,b){
+        first = parseInt(a.name);
+        second = parseInt(b.name);
+
+        if (isNaN(first) && isNaN(second)) {
+            if (a.name < b.name) {
+                return -1;
+            } else if (a.name > b.name) {
+                return 1;
+            }
+        } else if (isNaN(first)) {
+            return 1;
+        } else if (isNaN(second)) {
+            return -1;
+        } else {
+
+            if(first == second) {
+                if (a.name < b.name) {
+                    return -1;
+                } else if (a.name > b.name) {
+                    return 1;
+                }
+            }
+
+            else if(first < second) {
+                return -1;
+            }
+
+            else if(first > second) {
+                return 1;
+        }}
+    });
+
+    yChr.sort(function(a,b){
+        first = parseInt(a.name);
+        second = parseInt(b.name);
+
+        if (isNaN(first) && isNaN(second)) {
+            if (a.name < b.name) {
+                return -1;
+            } else if (a.name > b.name) {
+                return 1;
+            }
+        } else if (isNaN(first)) {
+            return 1;
+        } else if (isNaN(second)) {
+            return -1;
+        } else {
+
+            if(first == second) {
+                if (a.name < b.name) {
+                    return -1;
+                } else if (a.name > b.name) {
+                    return 1;
+                }
+            }
+
+            else if(first < second) {
+                return -1;
+            }
+
+            else if(first > second) {
+                return 1;
+            }}
+    });
+
+    zChr.sort(function(a,b){
+        first = parseInt(a.name);
+        second = parseInt(b.name);
+
+        if (isNaN(first) && isNaN(second)) {
+            if (a.name < b.name) {
+                return -1;
+            } else if (a.name > b.name) {
+                return 1;
+            }
+        } else if (isNaN(first)) {
+            return 1;
+        } else if (isNaN(second)) {
+            return -1;
+        } else {
+
+            if(first == second) {
+                if (a.name < b.name) {
+                    return -1;
+                } else if (a.name > b.name) {
+                    return 1;
+                }
+            }
+
+            else if(first < second) {/* X Chromosome */
+                return -1;
+            }
+
+            else if(first > second) {
+                return 1;
+            }}
+    });
+
+    //console.log(xChr);
+    //console.log(yChr);
+    //console.log(zChr);
+
+    /* X Axis */
+    var xStartPos = 0;
+    var xToggle = true;
+    xChr.forEach( function(e) {
+        //console.log(e);
+        var chLen = e.nucleotides * scaleFactor;
+        var chGeo = new THREE.BoxGeometry( chLen, axisWidth, axisWidth );
+        var chMat;
+        if (xToggle) {
+            chMat = new THREE.MeshBasicMaterial({color: 'darkred'});
+            xToggle = false;
+        } else {
+            chMat = new THREE.MeshBasicMaterial({color: 'red'});
+            xToggle = true;
+        }
+
+        var ch = new THREE.Mesh( chGeo, chMat );
+
+        ch.position.x = xStartPos + (chLen / 2);
+        ch.position.y = -(axisWidth / 2);
+        ch.position.z = -(axisWidth / 2);
+
+        xAxis.add( ch );
+
+        e["start"] = xStartPos;
+        xStartPos += chLen;
+        e["end"] = xStartPos;
+    })
+    scene.add(xAxis);
+
+
+    /* Y Axis */
+    var yStartPos = 0;
+    var yToggle = true;
+    yChr.forEach( function(e) {
+        //console.log(e);
+        var chLen = e.nucleotides * scaleFactor;
+        var chGeo = new THREE.BoxGeometry( axisWidth, chLen, axisWidth );
+        var chMat;
+        if (yToggle) {
+            chMat = new THREE.MeshBasicMaterial({color: 'darkblue'});
+            yToggle = false;
+        } else {
+            chMat = new THREE.MeshBasicMaterial({color: 'blue'});
+            yToggle = true;
+        }
+
+        var ch = new THREE.Mesh( chGeo, chMat );
+
+        ch.position.x = -(axisWidth / 2);
+        ch.position.y = yStartPos + (chLen / 2);
+        ch.position.z = -(axisWidth / 2);
+
+        yAxis.add( ch );
+
+        e["start"] = yStartPos;
+        yStartPos += chLen;
+        e["end"] = yStartPos;
+    })
+    scene.add(yAxis);
+
+    /* Z Axis */
+    var zStartPos = 0;
+    var zToggle = true;
+    zChr.forEach( function(e) {
+        //console.log(e);
+        var chLen = e.nucleotides * scaleFactor;
+        var chGeo = new THREE.BoxGeometry( axisWidth, axisWidth, chLen );
+        var chMat;
+        if (zToggle) {
+            chMat = new THREE.MeshBasicMaterial({color: 'green'});
+            zToggle = false;
+        } else {
+            chMat = new THREE.MeshBasicMaterial({color: 'lightgreen'});
+            zToggle = true;
+        }
+
+        var ch = new THREE.Mesh( chGeo, chMat );
+
+        ch.position.x = -(axisWidth / 2);
+        ch.position.y = -(axisWidth / 2);
+        ch.position.z = zStartPos + (chLen / 2);
+
+        zAxis.add( ch );
+
+        e["start"] = zStartPos;
+        zStartPos += chLen;
+        e["end"] = zStartPos;
+    })
+    scene.add(zAxis);
+
+    var gridWidth = 0.01
+    var gridMat = new THREE.MeshBasicMaterial({color: 'grey'});
+
+    yChr.forEach( function(e) {
+        var yxGridGeo = new THREE.BoxGeometry( xStartPos, gridWidth, gridWidth );
+        var yxGrid = new THREE.Mesh( yxGridGeo, gridMat );
+        yxGrid.position.x = (xStartPos / 2);
+        yxGrid.position.y = e.end;
+        yxGrid.position.z = 0;
+        grid.add(yxGrid);
+
+        var yzGridGeo = new THREE.BoxGeometry (gridWidth, gridWidth, zStartPos);
+        var yzGrid = new THREE.Mesh( yzGridGeo, gridMat);
+        yzGrid.position.x = 0;
+        yzGrid.position.y = e.end; //(yStartPos / 2);
+        yzGrid.position.z = (zStartPos / 2);
+        grid.add(yzGrid)
+    })
+
+    xChr.forEach( function(e) {
+        var hGridGeo = new THREE.BoxGeometry( gridWidth, gridWidth, zStartPos );
+        var hGrid = new THREE.Mesh( hGridGeo, gridMat );
+        hGrid.position.x = e.end;
+        hGrid.position.y = 0;
+        hGrid.position.z = (zStartPos / 2);
+        grid.add(hGrid);
+
+        var vGridGeo = new THREE.BoxGeometry (gridWidth, yStartPos, gridWidth);
+        var vGrid = new THREE.Mesh( vGridGeo, gridMat);
+        vGrid.position.x = e.end;
+        vGrid.position.y = (yStartPos /2);
+        vGrid.position.z = 0;
+        grid.add(vGrid)
+    })
+
+    zChr.forEach( function(e) {
+        var hGridGeo = new THREE.BoxGeometry( xStartPos, gridWidth, gridWidth );
+        var hGrid = new THREE.Mesh( hGridGeo, gridMat );
+        hGrid.position.x = (xStartPos / 2);
+        hGrid.position.y = 0;
+        hGrid.position.z = e.end;
+        grid.add(hGrid);
+
+        var vGridGeo = new THREE.BoxGeometry (gridWidth, yStartPos, gridWidth);
+        var vGrid = new THREE.Mesh( vGridGeo, gridMat);
+        vGrid.position.x = 0;
+        vGrid.position.y = (yStartPos / 2);
+        vGrid.position.z = e.end;
+        grid.add(vGrid)
+    })
+
+    scene.add(grid);
+
+}))
+
+
+/* !!START UNCOMMENT HERE AND DELETE THIS!!
+ Data Points
+ *//*
+
+ *//* X-Y Comparison *//*
+ var url_xy = "https://geco.iplantc.org/data/diags/4241/4242/test.all.json";
+ var points_xy = new Array();
+ var dots_xy = new THREE.Object3D();
+
+ $.ajax({
+ type: 'GET',
+ url: url_xy,
+ dataType: 'json',
+ success: function(data) {
+ points_xy = data.layers.pairs.data.lines["4241"]["4242"]["1"]["1"];}
+ }).complete(function() {
+ console.log(points_xy)
+ for (index in points_xy) {
+ var ch1_pos = (points_xy[index][0] + points_xy[index][1]) / 2;
+ var ch2_pos = (points_xy[index][2] + points_xy[index][3]) / 2;
+ var dotGeo = new THREE.SphereGeometry(0.01);
+ var dotMat = new THREE.MeshBasicMaterial({color: 'magenta'});
+ var dot = new THREE.Mesh (dotGeo, dotMat);
+ dot.position.x = ch2_pos * scaleFactor;
+ dot.position.y = ch1_pos * scaleFactor;
+ dot.position.z = -1.05;
+ dots_xy.add(dot);
+ }
+ scene.add(dots_xy)
+ });
+
+ *//* Y-Z Comparison *//*
+ var url_yz = "https://geco.iplantc.org/data/diags/18769/4241/test.all.json";
+ var points_yz = new Array();
+ var dots_yz = new THREE.Object3D();
+
+ $.ajax({
+ type: 'GET',
+ url: url_yz,
+ dataType: 'json',
+ success: function(data) {
+ points_yz = data.layers.pairs.data.lines["18769"]["4241"]["1"]["1"];}
+ }).complete(function() {
+ for (index in points_yz) {
+ var ch1_pos = (points_yz[index][2] + points_yz[index][3]) / 2;
+ var ch2_pos = (points_yz[index][0] + points_yz[index][1]) / 2;
+ var dotGeo = new THREE.SphereGeometry(0.01);
+ var dotMat = new THREE.MeshBasicMaterial({color: 'cyan'});
+ var dot = new THREE.Mesh (dotGeo, dotMat);
+ dot.position.x = -1.05;
+ dot.position.z = ch2_pos * scaleFactor;
+ dot.position.y = ch1_pos * scaleFactor;
+ dots_xy.add(dot);
+ }
+ scene.add(dots_xy)
+ });
+
+ *//* X-Z Comparison *//*
+ var url_xz = "https://geco.iplantc.org/data/diags/18769/4242/test.all.json";
+ var points_xz = new Array();
+ var dots_xz = new THREE.Object3D();
+
+ $.ajax({
+ type: 'GET',
+ url: url_xz,
+ dataType: 'json',
+ success: function(data) {
+ points_xz = data.layers.pairs.data.lines["18769"]["4242"]["1"]["1"];}
+ }).complete(function() {
+ for (index in points_xz) {
+ var ch1_pos = (points_xz[index][2] + points_xz[index][3]) / 2;
+ var ch2_pos = (points_xz[index][0] + points_xz[index][1]) / 2;
+ var dotGeo = new THREE.SphereGeometry(0.01);
+ var dotMat = new THREE.MeshBasicMaterial({color: 'yellow'});
+ var dot = new THREE.Mesh (dotGeo, dotMat);
+ dot.position.x = ch1_pos * scaleFactor;
+ dot.position.z = ch2_pos * scaleFactor;
+ dot.position.y = -1.05;
+ dots_xz.add(dot);
+ }
+ scene.add(dots_xz)
+ }); !!END COMMENT HERE AND REMOVE THIS!!*/
+
+
+/* 3-Way Comparison *//*
+var points_threeway = new Array();
+var dotsThreeWay = new THREE.Object3D();
+
+$.ajax({
+    type: 'GET',
+    url: './ThreeWay_generic.json',
+    dataType: 'json',
+    success: function(data) {
+        points_threeway = data;
+    }
+}).complete(function() {
+    points_threeway.forEach( function(coord) {
+        // console.log(coord)
+        var xPos = coord[0];
+        var yPos = coord[1];
+        var zPos = coord[2];
+
+        var dotGeo = new THREE.SphereGeometry(0.1);
+        var dotMat = new THREE.MeshBasicMaterial({color: 'green'});
+        var dot = new THREE.Mesh (dotGeo, dotMat);
+        dot.position.x = xPos * scaleFactor;
+        dot.position.y = yPos * scaleFactor;
+        dot.position.z = zPos * scaleFactor;
+        dotsThreeWay.add(dot);
+    })
+})
+
+scene.add(dotsThreeWay);*/
+
+/*
+ Request animation frame loop function
+ */
+function animate() {
+    /*
+     Apply rotation to cube mesh
+     */
+    //cube.rotation.y += 0.01;
+
+    /*
+     Update VR headset position and apply to camera.
+     */
+    controls.update();
+    /*
+     Render the scene through the VREffect.
+     */
+    effect.render( scene, camera );
+    requestAnimationFrame( animate );
+}
+/*
+ Kick off animation loop
+ */
+animate();
+
+/*
+ ~~~~CONTROLS~~~~
+ */
+
+/*
+ Listen for double click event to enter full-screen VR mode
+ */
+document.body.addEventListener( 'dblclick', function() {
+    effect.setFullScreen( true );
+});
+
+/*
+ Listen for Keydowns
+ - Shift = keyPressed["16"]
+ */
+var keyPressed = {};
+
+document.addEventListener('keydown', function(e) {
+    keyPressed[e.keyCode] = true;
+}, false);
+document.addEventListener('keyup', function(e) {
+    keyPressed[e.keyCode] = false;
+}, false);
+
+/*
+ Listen for key presses.
+ */
+function onkey(event) {
+    event.preventDefault();
+    var movement = 1;// scaleFactor;
+    if (event.keyCode == 90) { // z
+        // Zoom Reverse
+        scene.translateZ(-movement);
+    }
+    else if (event.keyCode == 65) { // a
+        // Zoom Forward
+        scene.translateZ(movement);
+    }
+    else if (event.keyCode == 38) { // Up Arrow
+        // Rotate forward (shift)
+        if (keyPressed["16"]) {
+            scene.rotation.x += ( 5 * Math.PI / 180 );
+        }
+        // Move up
+        else {
+            scene.translateY(-movement);
+        }
+    }
+    else if (event.keyCode == 40) { // Down Arrow
+        // Rotate backward (shift)
+        if (keyPressed["16"]) {
+            scene.rotation.x -= ( 5 * Math.PI / 180 );
+        }
+        // Move down
+        else {
+            scene.translateY(movement);
+        }
+    }
+    else if (event.keyCode == 37) { // Left Arrow
+        // Rotate left (shift)
+        if (keyPressed["16"]) {
+            scene.rotation.y += ( 5 * Math.PI / 180 );
+        }
+        // Move left
+        else {
+            scene.translateX(movement);
+        }
+    }
+    else if (event.keyCode == 39) { // Right Arrow
+        // Rotate right (shift)
+        if (keyPressed["16"]) {
+            scene.rotation.y -= ( 5 * Math.PI / 180 );
+        }
+        // Move right
+        else {
+            scene.translateX(-movement);
+        }
+    }
+    else if (event.keyCode == 32) { // Space Bar
+        // Reset rotation
+        scene.rotation.x = 0;
+        scene.rotation.y = 0;
+    }
+    else if (event.keyCode == 224) { // Command (L)
+        // Toggle grid
+        if (gridToggle) {
+            scene.remove(grid);
+            gridToggle = false;
+        } else {
+            scene.add(grid);
+            gridToggle = true;
+        }
+    }
+    else if (event.keyCode == 73) { // i
+        // For testing stuff
+        console.log(yChr)
+    }
+};
+window.addEventListener("keydown", onkey, true);
+
+/*
+ Handle window resizes
+ */
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    effect.setSize( window.innerWidth, window.innerHeight );
+}
+window.addEventListener( 'resize', onWindowResize, false );
+
+</script>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>Basic Three.js VR boilerplate</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+</body>
+
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js_mod/VRControls.js"></script>
+<script src="js/VREffect.js"></script>
+<!-- <script src="http://mrdoob.github.io/three.js/examples/fonts/helvetiker_regular.typeface.js"></script> -->
+
+<script>
+    /*
+     Setup three.js WebGL renderer
+     */
+    var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+    /*
+     Append the canvas element created by the renderer to document body element.
+     */
+    document.body.appendChild( renderer.domElement );
+    /*
+     Create a three.js scene
+     */
+    var scene = new THREE.Scene();
+    /*
+     Create a three.js camera
+     */
+    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 100 );
+    camera.position.x = 10;
+    camera.position.y = 10;
+    camera.position.z = 10;
+    //camera.rotation.x = ( 45 * Math.PI / 180 );
+    //camera.rotation.y = ( 45 * Math.PI / 180 );
+
+    /*
+     Apply VR headset orientation and positional to camera.
+     */
+    var controls = new THREE.VRControls( camera );
+    /*
+     Apply VR stereo rendering to renderer
+     */
+    var effect = new THREE.VREffect( renderer );
+    effect.setSize( window.innerWidth, window.innerHeight );
+    /*
+     Create 3d objects
+     */
+    var scaleFactor = 0.000005;
+    var ch1Length = 4639675; // Y
+    var ch2Length = 4686137; // X
+    var ch3Length = 4600755; // Z
+    var axisWidth = 0.01;
+
+    /*
+     Origin
+     */
+    var ogGeo = new THREE.BoxGeometry( axisWidth, axisWidth, axisWidth );
+    var ogMat = new THREE.MeshBasicMaterial({color: 0x119911});
+    var origin = new THREE.Mesh( ogGeo, ogMat );
+    origin.position.x = -(axisWidth / 2);
+    origin.position.y = -(axisWidth / 2);
+    origin.position.z = -(axisWidth / 2);
+    scene.add( origin );
+
+    /*
+     Chromosome 1: Y - 4241
+     */
+    var ch1Len = ch1Length * scaleFactor;
+    var ch1Geo = new THREE.BoxGeometry( axisWidth, ch1Len, axisWidth );
+    var ch1Mat = new THREE.MeshBasicMaterial({color: 'blue'});
+    var ch1 = new THREE.Mesh( ch1Geo, ch1Mat );
+    ch1.position.x = -(axisWidth / 2);
+    ch1.position.y = (ch1Len / 2);
+    ch1.position.z = -(axisWidth / 2);
+    scene.add( ch1 );
+
+    /*
+     Chromosome 2: X - 4242
+     */
+    var ch2Len = ch1Length * scaleFactor;
+    var ch2Geo = new THREE.BoxGeometry( ch2Len, axisWidth, axisWidth );
+    var ch2Mat = new THREE.MeshBasicMaterial({color: 'red'});
+    var ch2 = new THREE.Mesh( ch2Geo, ch2Mat );
+
+    ch2.position.x = (ch2Len / 2);
+    ch2.position.y = -(axisWidth / 2);
+    ch2.position.z = -(axisWidth / 2);
+    scene.add( ch2 );
+
+    /*
+     Chromosome 3: Z - 18769
+     */
+    var ch3Len = ch3Length * scaleFactor;
+    var ch3Geo = new THREE.BoxGeometry( axisWidth, axisWidth, ch3Len );
+    var ch3Mat = new THREE.MeshBasicMaterial({color: 'green'});
+    var ch3 = new THREE.Mesh( ch3Geo, ch3Mat );
+
+    ch3.position.x = -(axisWidth / 2);
+    ch3.position.y = -(axisWidth / 2);
+    ch3.position.z = (ch3Len / 2);
+    scene.add( ch3 );
+
+    /* !!START UNCOMMENT HERE AND DELETE THIS!!
+     Data Points
+    *//*
+
+    *//* X-Y Comparison *//*
+    var url_xy = "https://geco.iplantc.org/data/diags/4241/4242/test.all.json";
+    var points_xy = new Array();
+    var dots_xy = new THREE.Object3D();
+
+    $.ajax({
+        type: 'GET',
+        url: url_xy,
+        dataType: 'json',
+        success: function(data) {
+            points_xy = data.layers.pairs.data.lines["4241"]["4242"]["1"]["1"];}
+    }).complete(function() {
+        console.log(points_xy)
+        for (index in points_xy) {
+            var ch1_pos = (points_xy[index][0] + points_xy[index][1]) / 2;
+            var ch2_pos = (points_xy[index][2] + points_xy[index][3]) / 2;
+            var dotGeo = new THREE.SphereGeometry(0.01);
+            var dotMat = new THREE.MeshBasicMaterial({color: 'magenta'});
+            var dot = new THREE.Mesh (dotGeo, dotMat);
+            dot.position.x = ch2_pos * scaleFactor;
+            dot.position.y = ch1_pos * scaleFactor;
+            dot.position.z = -1.05;
+            dots_xy.add(dot);
+        }
+        scene.add(dots_xy)
+    });
+
+    *//* Y-Z Comparison *//*
+    var url_yz = "https://geco.iplantc.org/data/diags/18769/4241/test.all.json";
+    var points_yz = new Array();
+    var dots_yz = new THREE.Object3D();
+
+    $.ajax({
+        type: 'GET',
+        url: url_yz,
+        dataType: 'json',
+        success: function(data) {
+            points_yz = data.layers.pairs.data.lines["18769"]["4241"]["1"]["1"];}
+    }).complete(function() {
+        for (index in points_yz) {
+            var ch1_pos = (points_yz[index][2] + points_yz[index][3]) / 2;
+            var ch2_pos = (points_yz[index][0] + points_yz[index][1]) / 2;
+            var dotGeo = new THREE.SphereGeometry(0.01);
+            var dotMat = new THREE.MeshBasicMaterial({color: 'cyan'});
+            var dot = new THREE.Mesh (dotGeo, dotMat);
+            dot.position.x = -1.05;
+            dot.position.z = ch2_pos * scaleFactor;
+            dot.position.y = ch1_pos * scaleFactor;
+            dots_xy.add(dot);
+        }
+        scene.add(dots_xy)
+    });
+
+    *//* X-Z Comparison *//*
+    var url_xz = "https://geco.iplantc.org/data/diags/18769/4242/test.all.json";
+    var points_xz = new Array();
+    var dots_xz = new THREE.Object3D();
+
+    $.ajax({
+        type: 'GET',
+        url: url_xz,
+        dataType: 'json',
+        success: function(data) {
+            points_xz = data.layers.pairs.data.lines["18769"]["4242"]["1"]["1"];}
+    }).complete(function() {
+        for (index in points_xz) {
+            var ch1_pos = (points_xz[index][2] + points_xz[index][3]) / 2;
+            var ch2_pos = (points_xz[index][0] + points_xz[index][1]) / 2;
+            var dotGeo = new THREE.SphereGeometry(0.01);
+            var dotMat = new THREE.MeshBasicMaterial({color: 'yellow'});
+            var dot = new THREE.Mesh (dotGeo, dotMat);
+            dot.position.x = ch1_pos * scaleFactor;
+            dot.position.z = ch2_pos * scaleFactor;
+            dot.position.y = -1.05;
+            dots_xz.add(dot);
+        }
+        scene.add(dots_xz)
+    }); !!END COMMENT HERE AND REMOVE THIS!!*/
+
+
+    /* 3-Way Comparison */
+    var points_threeway = new Array();
+    var dotsThreeWay = new THREE.Object3D();
+
+    $.ajax({
+        type: 'GET',
+        url: './ThreeWay_generic.json',
+        dataType: 'json',
+        success: function(data) {
+            points_threeway = data;
+        }
+    }).complete(function() {
+        points_threeway.forEach( function(coord) {
+            // console.log(coord)
+            var xPos = coord[0];
+            var yPos = coord[1];
+            var zPos = coord[2];
+
+            var dotGeo = new THREE.SphereGeometry(0.1);
+            var dotMat = new THREE.MeshBasicMaterial({color: 'white'});
+            var dot = new THREE.Mesh (dotGeo, dotMat);
+            dot.position.x = xPos * scaleFactor;
+            dot.position.y = yPos * scaleFactor;
+            dot.position.z = zPos * scaleFactor;
+            dotsThreeWay.add(dot);
+        })
+    })
+
+    scene.add(dotsThreeWay);
+
+    /*
+     Request animation frame loop function
+     */
+    function animate() {
+        /*
+         Apply rotation to cube mesh
+         */
+        //cube.rotation.y += 0.01;
+
+        /*
+         Update VR headset position and apply to camera.
+         */
+        controls.update();
+        /*
+         Render the scene through the VREffect.
+         */
+        effect.render( scene, camera );
+        requestAnimationFrame( animate );
+    }
+    /*
+     Kick off animation loop
+     */
+    animate();
+
+    /*
+     ~~~~CONTROLS~~~~
+     */
+
+    /*
+     Listen for double click event to enter full-screen VR mode
+     */
+    document.body.addEventListener( 'dblclick', function() {
+        effect.setFullScreen( true );
+    });
+
+    /*
+     Listen for Keydowns
+     - Shift = keyPressed["16"]
+    */
+    var keyPressed = {};
+
+    document.addEventListener('keydown', function(e) {
+        keyPressed[e.keyCode] = true;
+    }, false);
+    document.addEventListener('keyup', function(e) {
+        keyPressed[e.keyCode] = false;
+    }, false);
+
+    /*
+     Listen for key presses.
+     */
+    function onkey(event) {
+        event.preventDefault();
+        var movement = 1;// scaleFactor;
+        if (event.keyCode == 90) { // z
+            // Zoom Reverse
+            scene.translateZ(-movement);
+        }
+        else if (event.keyCode == 65) { // a
+            // Zoom Forward
+            scene.translateZ(movement);
+        }
+        else if (event.keyCode == 38) { // Up Arrow
+            // Rotate forward (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.x += ( 5 * Math.PI / 180 );
+            }
+            // Move up
+            else {
+                scene.translateY(-movement);
+            }
+        }
+        else if (event.keyCode == 40) { // Down Arrow
+            // Rotate backward (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.x -= ( 5 * Math.PI / 180 );
+            }
+            // Move down
+            else {
+                scene.translateY(movement);
+            }
+        }
+        else if (event.keyCode == 37) { // Left Arrow
+            // Rotate left (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.y += ( 5 * Math.PI / 180 );
+            }
+            // Move left
+            else {
+                scene.translateX(movement);
+            }
+        }
+        else if (event.keyCode == 39) { // Right Arrow
+            // Rotate right (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.y -= ( 5 * Math.PI / 180 );
+            }
+            // Move right
+            else {
+                scene.translateX(-movement);
+            }
+        }
+        else if (event.keyCode == 32) { // Space Bar
+            // Reset rotation
+            scene.rotation.x = 0;
+            scene.rotation.y = 0;
+        }
+    };
+    window.addEventListener("keydown", onkey, true);
+
+    /*
+     Handle window resizes
+     */
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        effect.setSize( window.innerWidth, window.innerHeight );
+    }
+    window.addEventListener( 'resize', onWindowResize, false );
+
+</script>
+</html>

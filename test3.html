@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>JBrowse 3D v.0.01</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="js/three.min.js"></script>
+    <script src="js_mod/VRControls.js"></script>
+    <script src="js/VREffect.js"></script>
+
+    <script>
+        /*
+         Setup three.js WebGL renderer
+         */
+        var renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+        /*
+         Append the canvas element created by the renderer to document body element.
+         */
+        document.body.appendChild( renderer.domElement );
+
+        /*
+         Create a three.js scene
+         */
+        var scene = new THREE.Scene();
+
+        /*
+         Create a three.js camera
+         */
+        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0, 100 );
+        camera.rotation.y = ( 45 * Math.PI / 180 );
+        //camera.rotation.y = 0.3;
+        //camera.position.x = -1;
+        camera.position.y = 0.7;
+
+        /*
+         Draw axes
+         */
+        //var geometry = new THREE.BoxGeometry( 10, 0.02, 0 );
+        //var material = new THREE.MeshBasicMaterial({ color: 'white' });
+        //var y_axis = new THREE.Mesh(geometry, material);
+        //scene.add(y_axis);
+
+        /*
+         Apply VR headset orientation and positional to camera.
+         */
+        var controls = new THREE.VRControls( camera );
+
+        /*
+         Apply VR stereo rendering to renderer
+         */
+        var effect = new THREE.VREffect( renderer );
+        effect.setSize( window.innerWidth, window.innerHeight );
+
+
+        var feat_url1 = 'https://genomevolution.org/coge/api/v1/jbrowse/experiment/34/features/1?basesPerSpan=4.495483870967742&scale=0.22244546498277842&start=30000&end=31000';
+        var seq_url1 = 'https://genomevolution.org/coge/api/v1/jbrowse/sequence/16911/features/1?start=30000&end=31000';
+        var feat_url2 = 'https://genomevolution.org/coge/api/v1/jbrowse/experiment/34/features/1?basesPerSpan=4.495483870967742&scale=0.22244546498277842&start=17500&end=31000';
+        var seq_url2 = 'https://genomevolution.org/coge/api/v1/jbrowse/sequence/16911/features/1?start=17500&end=31000';
+
+        var feat_url3 = 'https://genomevolution.org/coge/api/v1/jbrowse/experiment/260/features/1?basesPerSpan=0.08967741935483871&scale=11.151079136690647&start=17549&end=17575';
+        var feat_url4 = 'https://genomevolution.org/coge/api/v1/jbrowse/experiment/260/features/1?basesPerSpan=100&scale=0.01&start=99999&end=115000'
+
+        var trackData;
+        var feat_blocks = new Array();
+        var feat_group = new THREE.Object3D();
+
+        /*
+        Get Feature Data
+        */
+        $.ajax({
+            type: 'GET',
+            url: feat_url1,
+            dataType: 'json',
+//              data: {},
+            success : function(data) {
+                //console.log(data)
+                trackData = data;
+            }
+        }).complete(function() {
+            console.log(trackData);
+            var startPosition = trackData.features[0].start;
+            var posScale = 0.004;
+            //var posScale = 0.001;
+            trackData.features.forEach(function(feat) {
+                //console.log(feat);
+                var position = (feat.start - startPosition)*posScale;
+                var length = (feat.end - feat.start + 1) / 100;
+                var height = feat.score;
+                var geometry = new THREE.BoxGeometry( 0.1 , height, length );
+                var material;
+                if (feat.score < 0) {
+                    material = new THREE.MeshBasicMaterial({color:'red'});
+                }
+                else {
+                    material = new THREE.MeshBasicMaterial({color:'green'});
+                }
+                var block = new THREE.Mesh(geometry, material);
+                block.position.z = -3 - position;
+                block.position.x = position;
+                block.position.y += height / 2;
+                //position += length;
+                block.rotation.y = -( 45 * Math.PI / 180 );
+                feat_group.add(block);
+                feat_blocks.push(block);
+            });
+        });
+
+        scene.add(feat_group);
+
+        /*
+        Establish Mouse Controls
+        */
+        $(window).bind('DOMMouseScroll', function(e){
+            //console.log(e.originalEvent);
+            var zoom = e.originalEvent.detail/50;
+
+            // Move Left/Right
+            if(e.originalEvent.axis == 1) {
+                //group.translateX(zoom);
+                camera.translateX(zoom);
+            }
+            // Move Up/Down
+            else {
+                //group.translateZ(zoom);
+                camera.translateZ(zoom);
+            }
+
+            animate();
+        });
+
+        /*
+         Request animation frame loop function
+         */
+        function animate() {
+
+            /*
+             Update VR headset position and apply to camera.
+             */
+            controls.update();
+
+            /*
+             Render the scene through the VREffect.
+             */
+            effect.render( scene, camera );
+
+            requestAnimationFrame( animate );
+        }
+
+        /*
+         Kick off animation loop
+         */
+        animate();
+
+        /*
+         Listen for double click event to enter full-screen VR mode
+         */
+        document.body.addEventListener( 'dblclick', function() {
+            effect.setFullScreen( true );
+        });
+
+        /*
+         Listen for keyboard event and zero positional sensor on appropriate keypress.
+         */
+        function onkey(event) {
+            event.preventDefault();
+
+            if (event.keyCode == 90) { // z
+                controls.resetSensor();
+            }
+        };
+
+        window.addEventListener("keydown", onkey, true);
+
+
+        /*
+         Handle window resizes
+         */
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            effect.setSize( window.innerWidth, window.innerHeight );
+        }
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+    </script>
+</body>
+</html>
