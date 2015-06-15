@@ -105,6 +105,9 @@ var zAxis = new THREE.Object3D();
 var grid = new THREE.Object3D();
 var gridToggle = true;
 
+var points_xy = new Array();
+var dots_xy = new THREE.Object3D();
+
 $.ajax({
     type: 'GET',
     url: './misc/chimp_dog.json',
@@ -119,6 +122,7 @@ $.ajax({
     dataType: 'json',
     success: function(data) {
         yChr = data["genomes"][yID]["chromosomes"];
+        points_xy = data.layers.syntenic_pairs.data.lines[yID][xID];
     }
 }).complete( function() {
     xChr.sort(function(a,b){
@@ -219,10 +223,6 @@ $.ajax({
                 return 1;
             }}
     });
-
-    //console.log(xChr);
-    //console.log(yChr);
-    //console.log(zChr);
 
     /* X Axis */
     var xStartPos = 0;
@@ -368,7 +368,49 @@ $.ajax({
 
     scene.add(grid);
 
+    /* X-Y Comparison */
+    console.log(points_xy);
+    for (index in points_xy) {
+        //console.log(index);
+        //console.log(points_xy[index]);
+        var a = points_xy[index];
+        for (aIndex in a) {
+            //console.log(aIndex);
+            //console.log(e[eIndex]);
+            var b = a[aIndex];
+            for (bIndex in b) {
+                //console.log(bIndex)
+                var xIndex;
+                //console.log(xChr);
+                for (xIn in xChr) {
+                    //console.log(xChr[xIn]["name"]);
+                    if (xChr[xIn]["name"] == index) {
+                        xIndex = xIn
+                    }
+                }
+                var yIndex;
+                for (yIn in yChr) {
+                    //console.log(xChr[xIn]);
+                    if (yChr[yIn]["name"] == aIndex) {
+                        yIndex = yIn
+                    }
+                }
+                //console.log(xIndex);
+                var chX_pos = ((b[bIndex][2] + b[bIndex][3]) / 2);
+                var chY_pos = ((b[bIndex][0] + b[bIndex][1]) / 2);
+                var dotGeo = new THREE.SphereGeometry(0.01);
+                var dotMat = new THREE.MeshBasicMaterial({color: 'magenta'});
+                var dot = new THREE.Mesh (dotGeo, dotMat);
+                dot.position.x = (chX_pos * scaleFactor) + xChr[xIndex]["start"];
+                dot.position.y = (chY_pos * scaleFactor) + yChr[yIndex]["start"];
+                dot.position.z = 0; //-1.05;
+                dots_xy.add(dot);
+            }
+        }
+    }
+    scene.add(dots_xy)
 }))
+
 
 
 /* !!START UNCOMMENT HERE AND DELETE THIS!!
@@ -604,7 +646,7 @@ function onkey(event) {
     }
     else if (event.keyCode == 73) { // i
         // For testing stuff
-        console.log(yChr)
+        console.log(xChr)
     }
 };
 window.addEventListener("keydown", onkey, true);
