@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>CoGeLeap</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+</body>
+
+<script src="js/three.min.js"></script>
+<script src="js_mod/VRControls.js"></script>
+<script src="js/VREffect.js"></script>
+<script src="//js.leapmotion.com/leap-0.6.4.js"></script>
+<script src="http://mrdoob.github.io/three.js/examples/fonts/helvetiker_regular.typeface.js"></script>
+
+<script type="text/javascript">
+    /*
+     Setup three.js WebGL renderer
+     */
+    var renderer = new THREE.WebGLRenderer( { antialias: true } );
+    /*
+     Append the canvas element created by the renderer to document body element.
+     */
+    document.body.appendChild( renderer.domElement );
+    /*
+     Create a three.js scene
+     */
+    var scene = new THREE.Scene();
+    /*
+     Create a three.js camera
+     */
+    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0, 100 );
+    /*
+     Apply VR headset orientation and positional to camera.
+     */
+    var controls = new THREE.VRControls( camera );
+    /*
+     Apply VR stereo rendering to renderer
+     */
+    var effect = new THREE.VREffect( renderer );
+    effect.setSize( window.innerWidth, window.innerHeight );
+    /*
+     Create 3d objects
+     */
+    var geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+    var material = new THREE.MeshNormalMaterial();
+    var cube = new THREE.Mesh( geometry, material );
+    /*
+     Position cube mesh
+     */
+    cube.position.z = -0.3;
+    /*
+     Add cube mesh to your three.js scene
+     */
+    //scene.add( cube );
+
+    var text3d = new THREE.TextGeometry("CoGe", {
+        size: 14,
+        height: 5,
+        curveSegments: 5,
+        font: "helvetiker"
+    });
+
+    var material = new THREE.MeshBasicMaterial({color: 0x119911});
+    var text = new THREE.Mesh(text3d, material);
+    text3d.computeBoundingBox();
+    var centerOffset = -0.5 * ( text3d.boundingBox.max.x - text3d.boundingBox.min.x );
+    text.position.x = centerOffset;
+    //text.position.y = 0;
+    text.position.z = -50;
+    text.rotation.x = 0;
+    text.rotation.y = 0;
+    text.rotation.z = 0;
+    scene.add(text);
+
+    /*
+     Request animation frame loop function
+     */
+    function animate() {
+        /*
+         Apply rotation to cube mesh
+         */
+        //cube.rotation.y += 0.01;
+        text.rotation.x += 0.01;
+        //text.rotation.y += 0.01;
+        //text.rotation.z += 0.01;
+
+        /*
+         Update VR headset position and apply to camera.
+         */
+        controls.update();
+        /*
+         Render the scene through the VREffect.
+         */
+        effect.render( scene, camera );
+        requestAnimationFrame( animate );
+    }
+    /*
+     Kick off animation loop
+     */
+    animate();
+    /*
+     Listen for double click event to enter full-screen VR mode
+     */
+    document.body.addEventListener( 'dblclick', function() {
+        effect.setFullScreen( true );
+    });
+    /*
+     Listen for keyboard event and zero positional sensor on appropriate keypress.
+     */
+    function onkey(event) {
+        event.preventDefault();
+        if (event.keyCode == 90) { // z
+            controls.zeroSensor();
+        }
+    };
+    window.addEventListener("keydown", onkey, true);
+    /*
+     Handle window resizes
+     */
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        effect.setSize( window.innerWidth, window.innerHeight );
+    }
+    window.addEventListener( 'resize', onWindowResize, false );
+
+    /*
+     Integrate Leap Control
+     */
+    var options = {enableGestures: true};
+    var hand;
+    var xRefLoc = 0, yRefLoc = 0, zRefLoc = 0;
+    var grabToggle = false;
+    var threshold = 25;
+
+    function detectMovement(reference, current, threshold){
+        if (reference - current > threshold) {
+            // Left, Down, In Movement
+            return -0.1;
+        } else if (reference - current < -threshold) {
+            // Right, Up, Out Movement
+            return 0.1;
+        } else {
+            return 0;
+        }
+    }
+
+    Leap.loop(options, function(frame) {
+        for (var i = 0, len = frame.hands.length; i < len; i++) {
+            hand = frame.hands[i];
+            // Check for right hand
+            if (hand.type == 'right') {
+                // Check if grabbing
+                if (hand.grabStrength > 0.8) {
+                    var xCurrentLoc = hand.thumb.dipPosition[0];
+                    var yCurrentLoc = hand.thumb.dipPosition[1];
+                    var zCurrentLoc = hand.thumb.dipPosition[2];
+
+                    if (grabToggle) {
+                        text.position.x += detectMovement(xRefLoc, xCurrentLoc, threshold);
+                        text.position.y += detectMovement(yRefLoc, yCurrentLoc, threshold);
+                        text.position.z += detectMovement(zRefLoc, zCurrentLoc, threshold);
+                    } else {
+                        grabToggle = true;
+                        xRefLoc = hand.thumb.dipPosition[0];
+                        yRefLoc = hand.thumb.dipPosition[1];
+                        zRefLoc = hand.thumb.dipPosition[2];
+                        text.position.x += detectMovement(xRefLoc, xCurrentLoc, threshold);
+                        text.position.y += detectMovement(yRefLoc, yCurrentLoc, threshold);
+                        text.position.z += detectMovement(zRefLoc, zCurrentLoc, threshold);
+                    }
+
+                } else {
+                    if (grabToggle) {
+                        grabToggle = false;
+                        xRefLoc = 0;
+                        yRefLoc = 0;
+                        zRefLoc = 0;
+                    }
+                }
+            }
+        }
+    })
+
+
+</script>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<script src="js/pixi.min.js"></script>
+<script src="js/three.min.js"></script>
+<script>
+    width = window.innerWidth;
+    height = window.innerHeight;
+
+    //-------------------------------------------------------------------------------------
+    // 3D Scene canvas
+    //-------------------------------------------------------------------------------------
+    var scene_3D = new THREE.Scene();
+    scene_3D.fog = new THREE.Fog( "#a1a1a1", 2000, 4000 );
+
+    var camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
+    camera.position.set( 0, 0, 700);
+    camera.updateProjectionMatrix();
+
+    var canvas_3D = new THREE.WebGLRenderer( { antialias: true } );
+    canvas_3D.setSize( width, height );
+    canvas_3D.setClearColor( scene_3D.fog.color, 1 );
+    document.body.appendChild( canvas_3D.domElement );
+
+    var geometry = new THREE.BoxGeometry( 500, 500, 500 );
+    var material = new THREE.MeshNormalMaterial();
+    var cube = new THREE.Mesh( geometry, material );
+    cube.position.z = -500;
+    cube.rotation.z = -45;
+    scene_3D.add( cube );
+
+    //-------------------------------------------------------------------------------------
+    // 2D UI canvas
+    //-------------------------------------------------------------------------------------
+    //var scene_UI = new PIXI.Stage( 0x66FF99 );
+    var scene_UI = new PIXI.Container();
+
+    var canvas_UI = PIXI.autoDetectRenderer(width, height, {transparent:true});
+    canvas_UI.view.style.position = "absolute";
+    canvas_UI.view.style.top = "0px";
+    canvas_UI.view.style.left = "0px";
+
+    var graphics = new PIXI.Graphics();
+    graphics.beginFill( 0xe60630 );
+    graphics.moveTo( width/2-200, height/2+100 );
+    graphics.lineTo( width/2-200, height/2-100 );
+    graphics.lineTo( width/2+200, height/2-100 );
+    graphics.lineTo( width/2+200, height/2+100 );
+    graphics.endFill();
+
+    scene_UI.addChild( graphics );
+
+    //-------------------------------------------------------------------------------------
+    // Map 2D UI canvas on 3D Plane
+    //-------------------------------------------------------------------------------------
+    var texture_UI = new THREE.Texture( canvas_UI.view );
+    texture_UI.needsUpdate = true;
+
+    var material_UI = new THREE.MeshBasicMaterial( {map: texture_UI, side:THREE.DoubleSide } );
+    material_UI.transparent = true;
+
+    var mesh_UI = new THREE.Mesh( new THREE.PlaneGeometry(width, height), material_UI );
+    mesh_UI.position.set(0,0,0);
+    scene_3D.add( mesh_UI );
+
+    //-------------------------------------------------------------------------------------
+    // Render Animation
+    //-------------------------------------------------------------------------------------
+    function animate() {
+        requestAnimationFrame( animate );
+        canvas_UI.render( scene_UI );
+
+        cube.rotation.y += 0.01;
+        canvas_3D.render( scene_3D, camera );
+    }
+    animate();
+</script>
+</body>
+</html>

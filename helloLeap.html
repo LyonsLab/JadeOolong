@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HelloLeap</title>
+
+
+</head>
+<body>
+<h1>Hello, Leap!</h1>
+<div id="output"></div>
+
+<script src="//js.leapmotion.com/leap-0.6.4.js"></script>
+<script type="text/javascript">
+    function concatData(id, data) {
+        return id + ": " + data + "<br>";
+    }
+
+    function concatJointPosition(id, data) {
+        return id + ": " + data[0] + ", " + data[1] + ", " + data[2] + "<br>";
+    }
+
+    function printToggle(id, option) {
+        if (option) {
+            return id + ": true<br>"
+        } else {
+            return id + ": false<br>"
+        }
+    }
+
+    function detectMovement(reference, current, threshold){
+        if (reference - current > threshold) {
+            //frameString += "Moving Left <br>";
+            return "Moving Left <br>";
+        } else if (reference - current < -threshold) {
+            //frameString += "Moving Right <br>";
+            return "Moving Right <br>";
+        } else {
+            return "No Movement <br>";
+        }
+    }
+
+    var output = document.getElementById('output');
+    var previousFrame;
+    var refFrame;
+    var scaleToggle = false;
+    var hand;
+    var refLoc = 0;
+    var grabToggle = false;
+    var threshold = 25;
+    var frameString = '', handString = '';
+
+    var options = {enableGestures: true};
+
+    Leap.loop(options, function(frame) {
+        frameString = printToggle("Grab", grabToggle);
+        frameString += concatData("Grab Ref", refLoc);
+        frameString += concatData("Frame ID", frame.id);
+        frameString += concatData("Hand Number", frame.hands.length);
+        frameString += concatData("Finger Number", frame.fingers.length);
+        frameString += "<br>";
+
+
+        if (frame.hands.length == 2) {
+            var hand1 = frame.hands[0];
+            var hand2 = frame.hands[1];
+            if (!scaleToggle) {
+                if (Math.abs(hand1.palmNormal[0]) > 0.8 && Math.abs(hand2.palmNormal[0]) > 0.8) {
+                    scaleToggle = true;
+                    refFrame = frame;
+                }
+            } else {
+                if (Math.abs(hand1.palmNormal[0]) < 0.8 || Math.abs(hand2.palmNormal[0]) < 0.8) {
+                    scaleToggle = false;
+                } else {
+                    if (refFrame) {
+                        var scaleing = frame.scaleFactor(refFrame).toFixed(2);
+                        if (scaleing > 1) {
+                            camera.position.z += ((scaleing-1) * 0.2)
+                        } else{
+                            camera.position.z -= (scaleing * 0.2);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+        /*if (frame.hands.length == 2) {
+            var hand1 = frame.hands[0];
+            var hand2 = frame.hands[1];
+            if (!scaleToggle) {
+                if (Math.abs(hand1.palmNormal[0]) > 0.8 && Math.abs(hand2.palmNormal[0]) > 0.8) {
+                    scaleToggle = true;
+                    refFrame = frame;
+                }
+            } else {
+                if (Math.abs(hand1.palmNormal[0]) < 0.8 || Math.abs(hand2.palmNormal[0]) < 0.8) {
+                    scaleToggle = false;
+                } else {
+                    if (refFrame) {
+                        frameString += concatData("Scaling", frame.scaleFactor(refFrame).toFixed(2));
+                        var rotationAxis = frame.rotationAxis(refFrame);
+                        var rotationAngle = frame.rotationAngle(refFrame);
+                        frameString += "Rotation axis: " + rotationAxis[0] + rotationAxis[1] + rotationAxis[2] + "<br>";
+                        frameString += "Rotation angle: " + rotationAngle.toFixed(2) + " radians<br />";
+                        frameString += "<br>";
+                    }
+                }
+            }
+        }*/
+
+        for (var i = 0, len = frame.hands.length; i < len; i++) {
+            hand = frame.hands[i];
+            // Check for right hand
+            if (hand.type == 'right') {
+                // Check if grabbing
+                if (hand.grabStrength > 0.8) {
+                    var currentLoc = hand.thumb.dipPosition[0];
+                    if (grabToggle) {
+                        //frameString += detectMovement(refLoc, currentLoc, threshold);
+                        frameString += concatData('Thumb Pos', hand.thumb.dipPosition)
+                        //frameString += concatData("Movement", hand.translation(
+                        if (previousFrame) {
+                            var translation = frame.translation(previousFrame);
+                            frameString += "Translation: " + translation[1] + " mm <br />";
+                        }
+                    } else {
+                        grabToggle = true;
+                        refLoc = hand.thumb.dipPosition[0];
+                        frameString += detectMovement(refLoc, currentLoc, threshold);
+                    }
+
+                } else {
+                    if (grabToggle) {
+                        grabToggle = false;
+                        refLoc = 0;
+                    }
+                }
+            }
+
+            handString = concatData("Hand Type", hand.type);
+            handString += concatData("Confidence", hand.confidence);
+            handString += concatData("Pinch Strength", hand.pinchStrength);
+            handString += concatData("Grab Strength", hand.grabStrength);
+            handString += "<br>";
+            handString += concatData("Roll", hand.roll());
+            handString += concatData("Pitch", hand.pitch());
+            handString += "<br>";
+            handString += concatData("Palm Normal", hand.palmNormal[0]);
+
+            handString += "<br>";
+            frameString += handString;
+        }
+
+
+        output.innerHTML = frameString;
+        previousFrame = frame;
+    });
+
+</script>
+
+</body>
+</html>

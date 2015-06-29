@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>Basic Three.js VR boilerplate</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+</body>
+
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js_mod/VRControls.js"></script>
+<script src="js/VREffect.js"></script>
+<script src="//js.leapmotion.com/leap-0.6.4.js"></script>
+<script src="js/pixi.min.js"></script>
+
+<!--<h1 style="color:red"> Text Overlay </h1>-->
+
+<script>
+    /*
+     Setup three.js WebGL renderer
+     */
+    var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+
+    /*
+     Append the canvas element created by the renderer to document body element.
+     */
+    document.body.appendChild( renderer.domElement );
+
+    /*
+     Create a three.js scene
+     */
+    var scene = new THREE.Scene();
+
+    /*
+     Create a three.js camera
+     */
+    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 100 );
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = 27;
+    //camera.rotation.x = ( 45 * Math.PI / 180 );
+    //camera.rotation.y = ( 45 * Math.PI / 180 );
+
+    /*
+     Apply VR headset orientation and positional to camera.
+     */
+    var controls = new THREE.VRControls( camera );
+
+    /*
+     Apply VR stereo rendering to renderer
+     */
+    var effect = new THREE.VREffect( renderer );
+    effect.setSize( window.innerWidth, window.innerHeight );
+
+
+    /*
+     Generate HUD
+    */
+    //HUD Pixi Canvas
+    var width = window.innerWidth; // 50;
+    var height = window.innerHeight; // 50;
+    var hudScene = new PIXI.Container();
+
+    var hudCanvas = PIXI.autoDetectRenderer(width, height, {transparent:true});
+    hudCanvas.view.style.position = "absolute";
+    hudCanvas.view.style.top = "0px";
+    hudCanvas.view.style.left = "0px";
+
+    var graphics = new PIXI.Graphics();
+    graphics.beginFill( 0xe60630 );
+    graphics.moveTo( width, height );
+    graphics.lineTo( -width, height );
+    graphics.lineTo( -width, -height );
+    graphics.lineTo( width, -height );
+    graphics.endFill();
+    hudScene.addChild( graphics );
+
+    var style = {
+        font : '8px Arial',
+        fill : 'white'
+    };
+    var richText = new PIXI.Text('HUD',style);
+    richText.x = 0;
+    richText.y = 0;
+    hudScene.addChild(richText);
+
+    //HUD in 3D
+    var hudTexture = new THREE.Texture( hudCanvas.view );
+    hudTexture.needsUpdate = true;
+    var hudMat = new THREE.SpriteMaterial( { map: hudTexture, side: THREE.DoubleSide} );
+    var HUD = new THREE.Sprite( hudMat );
+    scene.add( HUD );
+
+    /*
+     Create 3d objects
+     */
+    var scaleFactor = 0.000005;
+    var xLength = 4686137; // X
+    var yLength = 4639675; // Y
+    var zLength = 4600755; // Z
+    var xLen = xLength * scaleFactor;
+    var yLen = yLength * scaleFactor;
+    var zLen = zLength * scaleFactor;
+    var axisWidth = 0.1;
+
+    /*
+     Origin Crosshair
+     */
+    var origin = new THREE.Object3D();
+    var ogMat = new THREE.MeshBasicMaterial({color: 'grey'});
+
+    var xOgGeo = new THREE.BoxGeometry( (xLength + 1000000) * scaleFactor, axisWidth/2, axisWidth/2 );
+    var xOrigin = new THREE.Mesh( xOgGeo, ogMat );
+    origin.add( xOrigin );
+
+    var yOgGeo = new THREE.BoxGeometry( axisWidth/2, (yLength + 1000000) * scaleFactor, axisWidth/2 );
+    var yOrigin = new THREE.Mesh( yOgGeo, ogMat );
+    origin.add( yOrigin );
+
+    var zOgGeo = new THREE.BoxGeometry( axisWidth/2, axisWidth/2, (zLength + 1000000) * scaleFactor );
+    var zOrigin = new THREE.Mesh( zOgGeo, ogMat );
+    origin.add( zOrigin );
+
+    scene.add( origin );
+
+    /*
+     X-Axis: #4242
+     */
+    var xGeo = new THREE.BoxGeometry( xLen, axisWidth, axisWidth );
+    var chX = new THREE.Mesh( xGeo, new THREE.MeshBasicMaterial({color: 'red'}) );
+    chX.position.x = 0 ;
+    chX.position.y = -((yLen / 2) + (axisWidth / 2));
+    chX.position.z = -((zLen / 2) + (axisWidth / 2));
+    scene.add( chX );
+
+    /*
+     Y-Axis: #4241
+     */
+    var yGeo = new THREE.BoxGeometry( axisWidth, yLen, axisWidth );
+    var chY = new THREE.Mesh( yGeo, new THREE.MeshBasicMaterial({color: 'blue'}) );
+    chY.position.x = -((xLen / 2) + (axisWidth / 2));
+    chY.position.y = 0;
+    chY.position.z = -((zLen / 2) + (axisWidth / 2));
+    scene.add( chY );
+
+    /*
+     Z-Axis: #18769
+     */
+    var zGeo = new THREE.BoxGeometry( axisWidth, axisWidth, zLen );
+    var chZ = new THREE.Mesh( zGeo, new THREE.MeshBasicMaterial({color: 'green'}) );
+    chZ.position.x = -((xLen / 2) + (axisWidth / 2));
+    chZ.position.y = -((yLen / 2) + (axisWidth / 2));
+    chZ.position.z = 0;
+    scene.add( chZ );
+
+    //Enclosing Mesh
+    var structuralMesh = new THREE.Object3D();
+    var structuralMeshComponents = [];
+    var structuralMeshMat = new THREE.MeshBasicMaterial({color: "grey"});
+
+    var xyGeo = new THREE.BoxGeometry( xLen, axisWidth, axisWidth );
+    var xzGeo = new THREE.BoxGeometry( xLen, axisWidth, axisWidth );
+    var xyzGeo = new THREE.BoxGeometry( xLen, axisWidth, axisWidth );
+    var xy = new THREE.Mesh( xyGeo, structuralMeshMat);
+    xy.position.x = 0;
+    xy.position.y = ((yLen / 2) + (axisWidth / 2));
+    xy.position.z = -((zLen / 2) + (axisWidth / 2));
+    structuralMesh.add( xy );
+    var xz = new THREE.Mesh( xzGeo, structuralMeshMat);
+    xz.position.x = 0;
+    xz.position.y = -((yLen / 2) + (axisWidth / 2));
+    xz.position.z = ((zLen / 2) + (axisWidth / 2));
+    structuralMesh.add( xz );
+    var xyz = new THREE.Mesh( xyzGeo, structuralMeshMat);
+    xyz.position.x = 0;
+    xyz.position.y = ((yLen / 2) + (axisWidth / 2));
+    xyz.position.z = ((zLen / 2) + (axisWidth / 2));
+    structuralMesh.add( xyz );
+
+    var zyGeo = new THREE.BoxGeometry( axisWidth, axisWidth, zLen );
+    var zxGeo = new THREE.BoxGeometry( axisWidth, axisWidth, zLen );
+    var zxyGeo = new THREE.BoxGeometry( axisWidth, axisWidth, zLen );
+    var zy = new THREE.Mesh( zyGeo, structuralMeshMat);
+    zy.position.x = -((xLen / 2) + (axisWidth / 2));
+    zy.position.y = ((yLen / 2) + (axisWidth / 2));
+    zy.position.z = 0;
+    structuralMesh.add( zy );
+    var zx = new THREE.Mesh( zxGeo, structuralMeshMat);
+    zx.position.x = ((xLen / 2) + (axisWidth / 2));
+    zx.position.y = -((yLen / 2) + (axisWidth / 2));
+    zx.position.z = 0;
+    structuralMesh.add( zx );
+    var zxy = new THREE.Mesh( zxyGeo, structuralMeshMat);
+    zxy.position.x = ((xLen / 2) + (axisWidth / 2));
+    zxy.position.y = ((yLen / 2) + (axisWidth / 2));
+    zxy.position.z = 0;
+    structuralMesh.add( zxy );
+
+    var yxGeo = new THREE.BoxGeometry( axisWidth, yLen, axisWidth );
+    var yzGeo = new THREE.BoxGeometry( axisWidth, yLen, axisWidth );
+    var yxzGeo = new THREE.BoxGeometry( axisWidth, yLen, axisWidth );
+    var yx = new THREE.Mesh( yxGeo, structuralMeshMat );
+    yx.position.x = ((xLen / 2) + (axisWidth / 2));
+    yx.position.y = 0;
+    yx.position.z = -((zLen / 2) + (axisWidth / 2));
+    structuralMesh.add( yx );
+    var yz = new THREE.Mesh( yzGeo, structuralMeshMat);
+    yz.position.x = -((xLen / 2) + (axisWidth / 2));
+    yz.position.y = 0;
+    yz.position.z = ((zLen / 2) + (axisWidth / 2));
+    structuralMesh.add( yz );
+    var yxz = new THREE.Mesh( yxzGeo, structuralMeshMat);
+    yxz.position.x = ((xLen / 2) + (axisWidth / 2));
+    yxz.position.y = 0;
+    yxz.position.z = ((zLen / 2) + (axisWidth / 2));
+    structuralMesh.add( yxz );
+
+    scene.add( structuralMesh );
+
+    //2-Way Comparisons - OUTDATED, WONT WORK WITHOUT UPDATE
+    /*
+     //Data Points
+
+     //X-Y Comparison
+     var url_xy = "https://geco.iplantc.org/data/diags/4241/4242/test.all.json";
+     var points_xy = new Array();
+     var dots_xy = new THREE.Object3D();
+
+     $.ajax({
+     type: 'GET',
+     url: url_xy,
+     dataType: 'json',
+     success: function(data) {
+     points_xy = data.layers.pairs.data.lines["4241"]["4242"]["1"]["1"];}
+     }).complete(function() {
+     console.log(points_xy)
+     for (index in points_xy) {
+     var ch1_pos = (points_xy[index][0] + points_xy[index][1]) / 2;
+     var ch2_pos = (points_xy[index][2] + points_xy[index][3]) / 2;
+     var dotGeo = new THREE.SphereGeometry(0.01);
+     var dotMat = new THREE.MeshBasicMaterial({color: 'magenta'});
+     var dot = new THREE.Mesh (dotGeo, dotMat);
+     dot.position.x = ch2_pos * scaleFactor;
+     dot.position.y = ch1_pos * scaleFactor;
+     dot.position.z = -1.05;
+     dots_xy.add(dot);
+     }
+     scene.add(dots_xy)
+     });
+
+     //Y-Z Comparison
+     var url_yz = "https://geco.iplantc.org/data/diags/18769/4241/test.all.json";
+     var points_yz = new Array();
+     var dots_yz = new THREE.Object3D();
+
+     $.ajax({
+     type: 'GET',
+     url: url_yz,
+     dataType: 'json',
+     success: function(data) {
+     points_yz = data.layers.pairs.data.lines["18769"]["4241"]["1"]["1"];}
+     }).complete(function() {
+     for (index in points_yz) {
+     var ch1_pos = (points_yz[index][2] + points_yz[index][3]) / 2;
+     var ch2_pos = (points_yz[index][0] + points_yz[index][1]) / 2;
+     var dotGeo = new THREE.SphereGeometry(0.01);
+     var dotMat = new THREE.MeshBasicMaterial({color: 'cyan'});
+     var dot = new THREE.Mesh (dotGeo, dotMat);
+     dot.position.x = -1.05;
+     dot.position.z = ch2_pos * scaleFactor;
+     dot.position.y = ch1_pos * scaleFactor;
+     dots_xy.add(dot);
+     }
+     scene.add(dots_xy)
+     });
+
+     //X-Z Comparison
+     var url_xz = "https://geco.iplantc.org/data/diags/18769/4242/test.all.json";
+     var points_xz = new Array();
+     var dots_xz = new THREE.Object3D();
+
+     $.ajax({
+     type: 'GET',
+     url: url_xz,
+     dataType: 'json',
+     success: function(data) {
+     points_xz = data.layers.pairs.data.lines["18769"]["4242"]["1"]["1"];}
+     }).complete(function() {
+     for (index in points_xz) {
+     var ch1_pos = (points_xz[index][2] + points_xz[index][3]) / 2;
+     var ch2_pos = (points_xz[index][0] + points_xz[index][1]) / 2;
+     var dotGeo = new THREE.SphereGeometry(0.01);
+     var dotMat = new THREE.MeshBasicMaterial({color: 'yellow'});
+     var dot = new THREE.Mesh (dotGeo, dotMat);
+     dot.position.x = ch1_pos * scaleFactor;
+     dot.position.z = ch2_pos * scaleFactor;
+     dot.position.y = -1.05;
+     dots_xz.add(dot);
+     }
+     scene.add(dots_xz)
+     });
+     //!!END COMMENT HERE AND REMOVE THIS!!
+     */
+
+    /* 3-Way Comparison */
+    var points_threeway = new Array();
+    var dotsThreeWay = new THREE.Object3D();
+
+    $.ajax({
+        type: 'GET',
+        url: './ThreeWay_generic.json',
+        dataType: 'json',
+        success: function(data) {
+            points_threeway = data;
+        }
+    }).complete(function() {
+        points_threeway.forEach( function(coord) {
+            // console.log(coord)
+            var xPos = coord[0];
+            var yPos = coord[1];
+            var zPos = coord[2];
+
+            var dotGeo = new THREE.SphereGeometry(0.1);
+            var dotMat = new THREE.MeshBasicMaterial({color: 'white'});
+            var dot = new THREE.Mesh (dotGeo, dotMat);
+            dot.position.x = (xPos * scaleFactor) - (xLen / 2);
+            dot.position.y = (yPos * scaleFactor) - (yLen / 2);
+            dot.position.z = (zPos * scaleFactor) - (zLen / 2);
+            dotsThreeWay.add(dot);
+        })
+    });
+
+    scene.add(dotsThreeWay);
+
+    /*
+     Animation frame loop.
+     */
+    function animate() {
+        /* Update VR headset position and apply to camera. */
+        controls.update();
+
+        /* Update HUD Location */
+        HUD.position.x = camera.position.x;
+        HUD.position.y = camera.position.y;
+        HUD.position.z = camera.position.z - 1;
+
+        /* Render the scene. */
+        hudCanvas.render( hudScene );  //Render HUD
+        effect.render( scene, camera );  // Render scene through VREffect.
+
+        /* Create continuous animation */
+        requestAnimationFrame( animate );
+    }
+    animate();
+
+    /*
+     ~~~~CONTROLS~~~~
+     */
+
+    /* Toggles */
+    var structureToggle = true;
+    var originToggle = true;
+
+    /* Listen for double click event to enter full-screen VR mode */
+    document.body.addEventListener( 'dblclick', function() {
+        effect.setFullScreen( true );
+    });
+
+    /* Listen for Keydowns (Shift = kepPressed["16"] */
+    var keyPressed = {};
+
+    document.addEventListener('keydown', function(e) {
+        keyPressed[e.keyCode] = true;
+    }, false);
+    document.addEventListener('keyup', function(e) {
+        keyPressed[e.keyCode] = false;
+    }, false);
+
+    /* Onkey function */
+    function onkey(event) {
+        event.preventDefault();
+        var movement = 1;// scaleFactor;
+        if (event.keyCode == 90) { // z
+            // Zoom Reverse
+            camera.translateZ(movement);
+        }
+        else if (event.keyCode == 65) { // a
+            // Zoom Forward
+            camera.translateZ(-movement);
+        }
+        else if (event.keyCode == 38) { // Up Arrow
+            // Rotate forward (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.x += ( 5 * Math.PI / 180 );
+            }
+            // Move forwards
+            else {
+                camera.translateZ(-movement);
+                //For Up: camera.translateY(movement);
+            }
+        }
+        else if (event.keyCode == 40) { // Down Arrow
+            // Rotate backward (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.x -= ( 5 * Math.PI / 180 );
+            }
+            // Move backwards
+            else {
+                camera.translateZ(movement);
+                //For Down: camera.translateY(-movement);
+            }
+        }
+        else if (event.keyCode == 37) { // Left Arrow
+            // Rotate left (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.y += ( 5 * Math.PI / 180 );
+            }
+            // Move left
+            else {
+                camera.translateX(-movement);
+            }
+        }
+        else if (event.keyCode == 39) { // Right Arrow
+            // Rotate right (shift)
+            if (keyPressed["16"]) {
+                scene.rotation.y -= ( 5 * Math.PI / 180 );
+            }
+            // Move right
+            else {
+                camera.translateX(movement);
+            }
+        }
+        else if (event.keyCode == 32) { // Space Bar
+            // Reset rotation
+            scene.rotation.x = 0;
+            scene.rotation.y = 0;
+        } else if (event.keyCode == 49) { // 1
+            // Toggle Origin
+            if (originToggle) {
+                scene.remove(origin);
+                originToggle = false;
+            } else {
+                scene.add(origin);
+                originToggle = true;
+            }
+        } else if (event.keyCode == 50) { // 2
+            // Toggle Extra Axes
+            if (structureToggle) {
+                scene.remove(structuralMesh);
+                structureToggle = false;
+            } else {
+                scene.add(structuralMesh);
+                structureToggle = true;
+            }
+    }};
+    window.addEventListener("keydown", onkey, true);
+
+    /*
+     Handle window resizes.
+     */
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        effect.setSize( window.innerWidth, window.innerHeight );
+    }
+    window.addEventListener( 'resize', onWindowResize, false );
+
+</script>
+</html>

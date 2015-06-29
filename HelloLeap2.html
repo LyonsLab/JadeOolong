@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HelloLeap 2</title>
+</head>
+<body>
+<script src="//js.leapmotion.com/leap-0.6.4.js"></script>
+
+<!--<h1>Leap Output</h1>
+<div id="output"></div>
+
+
+<script type="text/javascript">
+
+    var options = {enableGestures: true};
+    var output = document.getElementById('output');
+
+
+
+    function concatData(id, data) {
+        return id + ": " + data + "<br>";
+    }
+
+    Leap.loop(options, function(frame) {
+        var frameString;
+        var previousFrame = controller.frame(30);
+
+        frameString = concatData("Frame ID", frame.id);
+        frameString += concatData("Hand Number", frame.hands.length);
+        frameString += concatData("Finger Number", frame.fingers.length);
+        frameString += "<br>";
+
+        frameString += concatData("Rotation Angle", frame.rotationAngle(previousFrame));
+
+        output.innerHTML = frameString;
+    })
+
+
+</script>-->
+
+    <h1 id="titleText">Leap Streaming Data</h1>
+    <p>Framerate: <span id="leapFPS">FPS</span></p>
+    <p>Number of hands: <span id="handCount">Hands</span></p>
+    <p>Number of pointables: <span id="pointableCount">Pointables</span></p>
+    <p>Number of tools: <span id="toolCount">Tools</span></p>
+    <p>Number of fingers: <span id="fingerCount">Fingers</span></p>
+    <p>Number of gestures: <span id="gestureCount">Gestures</span></p>
+    <p>Gestures: <span id="gestureInfo">Gesture Info</span></p>
+
+    <script>
+        var controller = new Leap.Controller({
+            enableGestures: true,
+            frameEventName: 'animationFrame'
+        });
+        controller.connect();
+
+        var titleText = document.getElementById('titleText');
+        var fpsDisplay = document.getElementById('leapFPS');
+        var handCountDisplay = document.getElementById('handCount');
+        var pointableCountDisplay = document.getElementById('pointableCount');
+        var fingerCountDisplay = document.getElementById('fingerCount');
+        var toolCountDisplay = document.getElementById('toolCount');
+        var gestureCountDisplay = document.getElementById('gestureCount');
+        var gestureInfo = document.getElementById('gestureInfo');
+
+        controller.on('frame', function(frame) {
+            //titleText.innerHTML = "Leap Streaming Data";
+            fpsDisplay.innerHTML = frame.currentFrameRate;
+            handCountDisplay.innerHTML = frame.hands.length;
+            pointableCountDisplay.innerHTML = frame.pointables.length;
+            fingerCountDisplay.innerHTML = frame.fingers.length;
+            toolCountDisplay.innerHTML = frame.tools.length;
+            gestureCountDisplay.innerHTML = frame.gestures.length;
+        })
+
+        controller.on('gesture', onGesture);
+        function onGesture(gesture,frame)
+        {
+            gestureInfo.innerHTML = gesture.type;
+            //console.log(gesture.type + " with ID " + gesture.id + " in frame " + frame.id);
+        }
+
+        controller.on('deviceStopped', function() {
+            titleText.innerHTML = "Connection Error";
+        })
+
+        controller.on('deviceStreaming', function() {
+            titleText.innerHTML = "Leap Streaming Data";
+        })
+
+
+    </script>
+
+</body>
+</html>
