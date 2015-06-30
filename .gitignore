@@ -2,6 +2,7 @@
 ### User Additions
 
 *.DS_Store
+data/*old*
 
 ### JetBrains template
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion
