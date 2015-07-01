@@ -80,10 +80,15 @@
     var yz_json = './data/human_chimp.json';
 
     var xChr = new Array();
+    var xChrIndexed = {};
     var xAxis = new THREE.Object3D();
+
     var yChr = new Array();
+    var yChrIndexed = {};
     var yAxis = new THREE.Object3D();
+
     var zChr = new Array();
+    var zChrIndexed = {};
     var zAxis = new THREE.Object3D();
 
     var grid = new THREE.Object3D();
@@ -95,6 +100,15 @@
     /*function sortNumber(a,b) {
         return a - b;
     }*/
+
+    /* FUNCTION: Index Chromosome Info by Name */
+    function indexChr(chr) {
+        var chrIndexed = {};
+        chr.forEach( function(e) {
+            chrIndexed[e.name] = e;
+        });
+        return chrIndexed
+    }
 
     /* FUNCTION: Sort Chromosome List */
     function sortChr(a,b){
@@ -291,7 +305,7 @@
             vGrid.position.y = (startPositions.y / 2);
             vGrid.position.z = e.end;
             grid.add(vGrid)
-        })
+        });
 
         grid.translateX(-startPositions.x / 2);
         grid.translateY(-startPositions.y / 2);
@@ -299,11 +313,8 @@
         scene.add(grid);
 
         /* X-Y Comparison */
-
-        // Points are ordered in Y, X
-
-        //console.log(points_xy);
         /*for (index in points_xy) {  //~~~index is a "Y" chromosome
+            //NOTE: Points are ordered in Y, X
             //console.log(index);
             //console.log(points_xy[index]);
             var a = points_xy[index];  //~~~~ a is all X chromsomes with match to Y chromosome
@@ -345,36 +356,66 @@
         dots_xy.translateY(-startPositions.y / 2);
         dots_xy.translateZ(-startPositions.z / 2);
         scene.add(dots_xy)*/
+
+
     }));
 
     /* 3-Way Comparison */
-    /*var points_threeway = new Array();
-    var dotsThreeWay = new THREE.Object3D();
+    var matches = new Array();
+    var matchDots = new THREE.Object3D();
 
     $.ajax({
         type: 'GET',
-        url: './ThreeWay_generic.json',
+        url: './data/dog_human_chimp.json',
         dataType: 'json',
         success: function(data) {
-            points_threeway = data;
+            matches = data;
         }
-    }).complete(function() {
-        points_threeway.forEach( function(coord) {
-            // console.log(coord)
-            var xPos = coord[0];
-            var yPos = coord[1];
-            var zPos = coord[2];
+    }).complete(function () {
+        console.log(zChr);
+        var xStartLoc, yStartLoc, zStartLoc;
+        var dotMat = new THREE.MeshBasicMaterial({color: 'white'});
+        var dotGeo = new THREE.SphereGeometry(0.1);
+        for (x_ch in matches) {
+            xChr.forEach( function(xchromosome) {
+                if (xchromosome.name == x_ch) {
+                    xStartLoc = xchromosome.start
+                    console.log(x_ch + ": " + xStartLoc)
+                }
+            });
+            for (y_ch in matches[x_ch]) {
+                yChr.forEach( function(ychromosome) {
+                    if (ychromosome.name == x_ch) {
+                        yStartLoc = ychromosome.start
+                    }
+                });
+                for (z_ch in matches[x_ch][y_ch]) {
+                    zChr.forEach( function(zchromosome) {
+                        if (zchromosome.name == x_ch) {
+                            zStartLoc = zchromosome.start
+                        }
+                    });
+                    for (index in matches[x_ch][y_ch][z_ch]) {
+                        var coordinate = matches[x_ch][y_ch][z_ch][index];
+                        var xPos = coordinate[0];
+                        var yPos = coordinate[1];
+                        var zPos = coordinate[2];
+                        var dot = new THREE.Mesh (dotGeo, dotMat);
+                        dot.position.x = xStartLoc + (xPos * scaleFactor);
+                        dot.position.y = yStartLoc + (yPos * scaleFactor);
+                        dot.position.z = zStartLoc + (zPos * scaleFactor);
+                        matchDots.add(dot)
+                    }
+                }
+            }
+        }
 
-            var dotGeo = new THREE.SphereGeometry(0.1);
-            var dotMat = new THREE.MeshBasicMaterial({color: 'green'});
-            var dot = new THREE.Mesh (dotGeo, dotMat);
-            dot.position.x = xPos * scaleFactor;
-            dot.position.y = yPos * scaleFactor;
-            dot.position.z = zPos * scaleFactor;
-            dotsThreeWay.add(dot);
-        })
-    })
-    scene.add(dotsThreeWay);*/
+        matchDots.translateX(-startPositions.x / 2);
+        matchDots.translateY(-startPositions.y / 2);
+        matchDots.translateZ(-startPositions.z / 2);
+        scene.add(matchDots);
+    });
+
 
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~ANIMATE LOOP~~~~
