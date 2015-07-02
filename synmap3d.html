@@ -27,6 +27,13 @@
 
 <script>
     /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~SELECT A VISUALIZATION~~~~
+     -----------------------------------------------------------------------------------------------------------------*/
+
+    //var visSelect = "dog_human_chimp";
+    var visSelect = "human_chimp_gorilla";
+
+    /*-----------------------------------------------------------------------------------------------------------------
      ~~~~SETUP CANVAS & VR ENVIRONMENT~~~~
      -----------------------------------------------------------------------------------------------------------------*/
 
@@ -59,10 +66,6 @@
     /* Scaling Options */
     var scaleFactor = 0.00000001;
     var axisWidth = 0.05;
-
-    /* Select Visualization */
-    //var visSelect = "dog_human_chimp";
-    var visSelect = "human_chimp_gorilla";
 
     /* Assign Files by Selected Visualization */
     var xId, yID, zID, xy_json, xz_json, yz_json, threeway_json;
