@@ -1,13 +1,69 @@
 __author__ = 'senorrift'
 
 import json
-import pprint
+import parser
 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 #                                                                                                                     #
 # Functions                                                                                                           #
 #                                                                                                                     #
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+
+def chromosome_parser(xy_input, xz_input, yz_input):
+    """ Chromosome Parser
+    Given three pairwise SynMap dotplot_dot.pl output JSON files,
+    Generate new JSON files containing only chromosomes with synteny.
+
+    :param xy_input: JSON file from pairwise SynMap & dotplot_dots.pl
+    :param xz_input: JSON file from pairwise SynMap & dotplot_dots.pl
+    :param yz_input: JSON file from pairwise SynMap & dotplot_dots.pl
+    """
+    from json import load, dump
+    # Global Variables
+    inputs = [xy_input, xz_input, yz_input]
+    match_chromosomes = {}
+
+    # Data Processing
+    for input_file in inputs:
+        get = load(open(input_file, 'r'))
+
+        # Get Species IDs
+        genomes = get["layers"]["syntenic_pairs"]["data"]["lines"]
+        first_sp_id = genomes.keys()[0]
+        second_sp_id = genomes[first_sp_id].keys()[0]
+
+        if first_sp_id not in match_chromosomes.keys():
+            match_chromosomes[first_sp_id] = []
+        if second_sp_id not in match_chromosomes.keys():
+            match_chromosomes[second_sp_id] = []
+
+        # Find Chromosomes with Matches
+        pairs = genomes[first_sp_id][second_sp_id]
+        for first_sp_ch in pairs:
+            if first_sp_ch not in match_chromosomes[first_sp_id]:
+                match_chromosomes[first_sp_id].append(first_sp_ch)
+            for second_sp_ch in pairs[first_sp_ch]:
+                if second_sp_ch not in match_chromosomes[second_sp_id]:
+                    match_chromosomes[second_sp_id].append(second_sp_ch)
+
+    # Produce Parsed Files
+    for input_file in inputs:
+        output_file = "parsed_" + input_file
+        parsed = load(open(input_file, 'r'))
+
+        to_remove = {}
+        for genome in parsed['genomes']:
+            to_remove[genome] = []
+            for chromosome in parsed['genomes'][genome]['chromosomes']:
+                if chromosome['name'] not in match_chromosomes[genome]:
+                    to_remove[genome].append(chromosome)
+
+        for genome in to_remove:
+            for removal in to_remove[genome]:
+                parsed['genomes'][genome]['chromosomes'].remove(removal)
+
+        dump(parsed, open(output_file, 'w'))
 
 
 def get_data(first_sp_id, second_sp_id, json_file):
@@ -35,11 +91,13 @@ def get_data(first_sp_id, second_sp_id, json_file):
         test = pairs[first_sp_id]
         species.append(first_sp_id)
         species.append(second_sp_id)
+        del test
     except KeyError:
         try:
             test = pairs[second_sp_id]
             species.append(second_sp_id)
             species.append(first_sp_id)
+            del test
         except KeyError:
             print "File/Species Error: Code 1"
             exit()
@@ -240,18 +298,28 @@ def find_matches(species_coordinate, link1, link2, link3):
 #                                                                                                                     #
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-# Necessary Inputs
-output_file = '../data/dog_human_chimp.json'
-x = "7057"
-y = "25712"
-z = "11691"
-file1 = "../data/human_dog.json"
-file2 = "../data/chimp_dog.json"
-file3 = "../data/human_chimp.json"
+# User Inputs
+output_file = 'human_chimp_gorilla.json'
+x = '25712'  # "7057"
+y = '11691'  # "25712"
+z = '11931'  # "11691"
+file1 = 'human_chimp.json'  # "human_dog.json"
+file2 = 'gorilla_chimp.json'  # "chimp_dog.json"
+file3 = 'gorilla_human.json'  # "human_chimp.json"
+
+# User Options
+parse_file = True
+
+# Option Actions
+if parse_file:
+    chromosome_parser(file1, file2, file3)
+    file1 = "parsed_" + file1
+    file2 = "parsed_" + file2
+    file3 = "parsed_" + file3
+    output_file = "parsed_" + output_file
 
 # Execute Script, Dump JSON with Hits
 all_matches, match_number = find_matches([x, y, z], file1, file2, file3)
-#pprint.pprint(all_matches)
 json.dump(all_matches, open(output_file, "w"))
 
 # Print Match Number
