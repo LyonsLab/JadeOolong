@@ -26,6 +26,9 @@
 <!--VRControls.js-->
 <script src="js/VRControls.js"></script>
 
+<!--VRControls.js-->
+<script src="js/OrbitControls.js"></script>
+
 <!--VREffect.js-->
 <script src="js/VREffect.js"></script>
 
@@ -49,11 +52,16 @@
      Create a three.js camera
      */
     var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0, 100 );
+    camera.position.z = 1;
+    scene.add( camera );
 
     /*
      Apply VR headset orientation and positional to camera.
      */
-    var controls = new THREE.VRControls( camera );
+    //var controls = new THREE.VRControls( camera );
+    var controls = new THREE.OrbitControls( camera );
+    //controls.damping = 0.2;
+    //controls.addEventListener( 'change', render );
 
     /*
      Apply VR stereo rendering to renderer
@@ -73,7 +81,7 @@
     /*
      Position cube mesh
      */
-    cube.position.z = -0.3;
+    //cube.position.z = -0.3;
 
     /*
      Add cube mesh to your three.js scene
@@ -87,7 +95,7 @@
         /*
          Apply rotation to cube mesh
          */
-        cube.rotation.y += 0.01;
+        //cube.rotation.y += 0.01;
 
         /*
          Update VR headset position and apply to camera.
