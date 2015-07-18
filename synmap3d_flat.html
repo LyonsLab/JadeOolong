@@ -8,10 +8,11 @@
     <style>
         body {
             background-color: #ffffff;
-            #color: #fff;
+            /*color: #fff;*/
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             margin: 0px;
             padding: 0px;
-            #overflow: scroll;
+            /*overflow: scroll;*/
         }
 
         .contentBox {
@@ -32,7 +33,7 @@
         }
 
         #opts {
-            height: 200px;
+            /*height: 200px;*/
             margin-top: 0px;
             margin-bottom: 20px;
             padding: 15px;
@@ -40,12 +41,11 @@
 
         #opts .sections div {
             display: inline-block;
-            #padding-right: 2em;
+            /*padding-right: 2em;*/
             margin-right: 2em;
         }
 
         .sections {
-            font-family: "Helvetica Neue";
             font-size: 16px;
             font-weight: bold;
             color: #999;
@@ -54,6 +54,42 @@
         .header .active {
             color: #119911;
             font-size: larger;
+        }
+
+        .header .hover {
+            color: #808080;
+            #font-size: larger;
+        }
+
+        .opts_content {
+            padding-top: 10px;
+        }
+
+        .opts_blocks {
+            display: inline-block;
+        }
+
+        .desc_block {
+            width: 16.6667%;
+        }
+
+        .select_block {
+            /*width: 10%;*/
+        }
+        .genome_select {
+            width: 66.6667%;
+        }
+        .smbutton {
+            background-color: #9ce76d;
+            border: 1px solid #7adf39;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            width: 100px;
+        }
+
+        .r {
+            float: right;
         }
     </style>
 </head>
@@ -67,10 +103,10 @@
 <div id="opts" class="contentBox">
     <div class="header">
         <div class="sections">
-            <div class="active">Options</div>
-            <div>Data</div>
-            <div>Export</div>
-            <div>Help</div>
+            <div id="options" class="active">Options</div>
+            <div id="data">Data</div>
+            <div id="export">Export</div>
+            <div id="help">Help</div>
         </div>
     </div>
     <div class="opts_content">
@@ -88,25 +124,133 @@
 <script src="js_mod/FlatOrbitControls.js"></script>
 
 <!-- Options Script -->
-<script>
+<script type="text/javascript">
+
     $(document).ready( function() {
+        var contentDiv = $(".opts_content");
+        contentDiv.append($("#opts_tmpl").html());
+
         $(".sections > div").hover(
                 function() {
                     if (!$(this).hasClass( "active" )) {
-                        $(this).css("color", "#808080");
-                        $(this).css("font-size", "larger");
+                        $(this).addClass("hover");
+                        $(".sections > div").unbind().click( function() {
+                            /* Change Option Content Formatting */
+                            $(".active").removeClass("active");
+                            $(this).removeClass("hover");
+                            $(this).addClass("active");
+                            /* Populate opts_content*/
+                            var newCategory = $(this).attr("id");
+                            switch (newCategory) {
+                                case "options":
+                                    //console.log("Options Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#opts_tmpl").html());
+                                    break;
+                                case "data":
+                                    //console.log("Data Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#data_tmpl").html());
+                                    break;
+                                case "export":
+                                    //console.log("Export Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#export_tmpl").html());
+                                    break;
+                                case "help":
+                                    //console.log("Help Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#help_tmpl").html());
+                                    break;
+                                default:
+                                    console.warn("Unknown Menu");
+                            }
+                        });
                     }
                 }, function() {
                     if (!$(this).hasClass( "active" )) {
-                        $(this).css("color", "#999");
-                        $(this).css("font-size", "medium");
+                        $(this).removeClass("hover")
                     }
                 });
     })
 </script>
 
+<!--Template Script-->
+<script id="opts_tmpl" type="text/template">
+    <div>Options Zone</div>
+</script>
+
+<script id="data_tmpl" type="text/template">
+    <div>Genomes</div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">X-Axis Genome:</div>
+        <div class="opts_blocks genome_select">
+            <input id="genomeX" size="50">
+        </div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Y-Axis Genome:</div>
+        <div class="opts_blocks genome_select">
+            <input id="genomeY" size="50">
+        </div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Z-Axis Genome:</div>
+        <div class="opts_blocks genome_select">
+            <input id="genomeZ" size="50">
+        </div>
+    </div>
+
+    <div>Options</div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Hide contigs without synteny:</div>
+        <div class="opts_blocks"><input type="checkbox"></div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Minimum contig length (bp):</div>
+        <div class="opts_blocks"><input type="number" size="50"></div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Sort chromosomes by:</div>
+        <div class="opts_blocks select_block">
+            <select>
+                <option value="name">Name</option>
+                <option value="length">Length</option>
+            </select>
+        </div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Enable VR mode:</div>
+        <div class="opts_blocks"><input type="checkbox"></div>
+    </div>
+
+    <div>
+        <div class="smbutton r" style="display: inline-block;">Re-Launch</div>
+    </div>
+</script>
+
+<script id="export_tmpl" type="text/template">
+    <div>
+        <div class="opts_blocks desc_block">Export Visualization</div>
+        <div class="opts_blocks select_block">
+            <select>
+                <option value="pdf">PDF</option>
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+            </select>
+        </div>
+        <div class="opts_blocks smbutton">Export</div>
+    </div>
+
+    <div>Export Data</div>
+</script>
+
+<script id="help_tmpl" type="text/template">
+    <div>Help Zone</div>
+</script>
+
 <!--Visualization Script-->
-<script>
+<script type="text/javascript">
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~SELECT A VISUALIZATION~~~~
      -----------------------------------------------------------------------------------------------------------------*/
