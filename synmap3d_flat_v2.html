@@ -2,7 +2,7 @@
 
 <html lang="en">
 <head>
-    <title>Flat SynMap3d</title>
+    <title>Flat SynMap3d v.2</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
@@ -255,9 +255,10 @@
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~SELECT A VISUALIZATION~~~~
      -----------------------------------------------------------------------------------------------------------------*/
-
+    var visSelect = "chicken_human_mouse";
+    //DEPRICIATED:
     //var visSelect = "dog_human_chimp";
-    var visSelect = "human_chimp_gorilla";
+    //var visSelect = "human_chimp_gorilla";
 
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~SETUP CANVAS & VR ENVIRONMENT~~~~
@@ -311,6 +312,16 @@
     /* Assign Files by Selected Visualization */
     var xId, yID, zID, xy_json, xz_json, yz_json, threeway_json;
     switch(visSelect) {
+        case "chicken_human_mouse":
+            xID = '22736';
+            yID = '25747';
+            zID = '7073';
+            xy_json = './data/parsed_22736_25747_synteny.json';
+            xz_json = './data/parsed_22736_7073_synteny.json';
+            yz_json = './data/parsed_25747_7073_synteny.json';
+            threeway_json = './data/parsed_chicken_human_mouse.json';
+            break;
+        /* DEPRICIATED: UPDATE TO NEW dotplot_dots.py FILES
         case "dog_human_chimp":
             xID = '7057';  // Dog
             yID = '25712'; // Human
@@ -328,7 +339,7 @@
             xz_json = './data/parsed_gorilla_human.json';
             yz_json = './data/parsed_gorilla_chimp.json';
             threeway_json = './data/parsed_human_chimp_gorilla.json';
-            break;
+            break; */
         default:
             console.log("No Species Selected");
             break;
@@ -350,9 +361,6 @@
 
     var grid = new THREE.Object3D();
     var gridToggle = true;
-
-    var points_xy = new Array();
-    var dots_xy = new THREE.Object3D();
 
     var matches = new Array();
     var matchDots = new THREE.Object3D();
@@ -434,7 +442,7 @@
         }
 
         chr.forEach(function (e) {
-            var chLen = e.nucleotides * scaleFactor;
+            var chLen = e.length * scaleFactor;
 
             var chGeo;
             if (focusAxis == 'x') {
@@ -472,6 +480,15 @@
         return axis;
     }
 
+    /* FUNCTION: Get Color From Histogram */
+    function getColorFromHist(value) {
+        if (value > 1) {
+            return 'blue';
+        } else {
+            return 'red';
+        }
+    }
+
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~GET DATA & CREATE 3D OBJECTS~~~~
      ----------------------------------------------------------------------------------------------------------------*/
@@ -490,7 +507,6 @@
         dataType: 'json',
         success: function(data) {
             yChr = data["genomes"][yID]["chromosomes"];
-            points_xy = data.layers.syntenic_pairs.data.lines[yID][xID];
         }
     }).complete($.ajax({
         type: 'GET',
@@ -509,7 +525,9 @@
         var zChrIndexed = indexChr(zChr);
 
         /* 3d Object: Axes */
+        console.log("Building X Axis");
         xAxis = buildAxisFromChr(xChr, 'x');
+        console.log("Building Y Axis");
         yAxis = buildAxisFromChr(yChr, 'y');
         zAxis = buildAxisFromChr(zChr, 'z');
 
@@ -586,53 +604,8 @@
         grid.translateZ(-startPositions.z / 2);
         scene.add(grid);
 
-        /* 3d Object: X-Y Comparison */
-        /*for (index in points_xy) {  //~~~index is a "Y" chromosome
-         //NOTE: Points are ordered in Y, X
-         //console.log(index);
-         //console.log(points_xy[index]);
-         var a = points_xy[index];  //~~~~ a is all X chromsomes with match to Y chromosome
-         for (aIndex in a) {  //~~~~aIndex is an X chromosome
-         //console.log(aIndex);
-         //console.log(e[eIndex]);
-         var b = a[aIndex]; //~~~~ b is all matches between Y and X
-         for (bIndex in b) {   //~~~~ bIndex is a match between Y and X
-         //console.log(bIndex)
-         var xIndex;
-         //console.log(xChr);
-         for (xIn in xChr) {
-         //console.log(xChr[xIn]["name"]);
-         if (xChr[xIn]["name"] == index) {  // changed "index" to "aIndex"
-         xIndex = xIn
-         }
-         }
-         var yIndex;
-         for (yIn in yChr) {
-         //console.log(xChr[xIn]);
-         if (yChr[yIn]["name"] == aIndex) { // changed "aIndex" to "index"
-         yIndex = yIn
-         }
-         }
-         //console.log(xIndex);
-         var chX_pos = ((b[bIndex][2] + b[bIndex][3]) / 2);
-         var chY_pos = ((b[bIndex][0] + b[bIndex][1]) / 2);
-         var dotGeo = new THREE.SphereGeometry(0.01);
-         var dotMat = new THREE.MeshBasicMaterial({color: 'magenta'});
-         var dot = new THREE.Mesh (dotGeo, dotMat);
-         dot.position.x = (chX_pos * scaleFactor) + xChr[xIndex]["start"];
-         dot.position.y = (chY_pos * scaleFactor) + yChr[yIndex]["start"];
-         dot.position.z = 0; //-1.05;
-         dots_xy.add(dot);
-         }
-         }
-         }
-         dots_xy.translateX(-startPositions.x / 2);
-         dots_xy.translateY(-startPositions.y / 2);
-         dots_xy.translateZ(-startPositions.z / 2);
-         scene.add(dots_xy)*/
-
         /* 3d Object: 3-Way Comparison */
-        var dotMat = new THREE.MeshBasicMaterial({color: 'black'});  //TODO: Change to color by Ks
+        //var dotMat = new THREE.MeshBasicMaterial({color: 'black'});
         var dotGeo = new THREE.SphereGeometry(0.05);
         for (x_ch in matches) {
             for (y_ch in matches[x_ch]) {
@@ -642,6 +615,9 @@
                         var xPos = coordinate[0];
                         var yPos = coordinate[1];
                         var zPos = coordinate[2];
+                        var Ks = coordinate[3]['mean']['Ks'];
+                        var Kn = coordinate[3]['mean']['Kn'];
+                        var dotMat = new THREE.MeshBasicMaterial({color: getColorFromHist(Ks)});  //TODO: Make Better
                         var dot = new THREE.Mesh (dotGeo, dotMat);
                         dot.position.x = xChrIndexed[x_ch]['start'] + (xPos * scaleFactor);
                         dot.position.y = yChrIndexed[y_ch]['start'] + (yPos * scaleFactor);
