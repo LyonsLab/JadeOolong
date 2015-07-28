@@ -310,7 +310,7 @@
     var axisWidth = 0.05;
 
     /* Assign Files by Selected Visualization */
-    var xId, yID, zID, xy_json, xz_json, yz_json, threeway_json;
+    var xId, yID, zID, xy_json, xz_json, yz_json, threeway_json, histogram;
     switch(visSelect) {
         case "chicken_human_mouse":
             xID = '22736';
@@ -320,6 +320,7 @@
             xz_json = './data/parsed_22736_7073_synteny.json';
             yz_json = './data/parsed_25747_7073_synteny.json';
             threeway_json = './data/parsed_chicken_human_mouse.json';
+            histogram = './data/parsed_chm_histogram.json';
             break;
         /* DEPRICIATED: UPDATE TO NEW dotplot_dots.py FILES
         case "dog_human_chimp":
@@ -365,6 +366,7 @@
     var matches = new Array();
     var matchDots = new THREE.Object3D();
 
+    var histogram_data = new Array();
 
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~FUNCTIONS~~~~
@@ -480,12 +482,42 @@
         return axis;
     }
 
-    /* FUNCTION: Get Color From Histogram */
-    function getColorFromHist(value) {
-        if (value > 1) {
-            return 'blue';
+    /* FUNCTION: Generate Cutoff List */
+    function getHistogramBins(Ks_or_Kn, logBool, comparison, histogram_object) {
+        var logFactor;
+        if (logBool) {
+            logFactor = "logten"
         } else {
-            return 'red';
+            logFactor = "values"
+        }
+
+        histInfo = histogram_object[logFactor]["info"][Ks_or_Kn][comparison];
+        var binCutoffs = [histInfo.bin1[1], histInfo.bin2[1], histInfo.bin3[1], histInfo.bin4[1], histInfo.bin5[1]];
+        return binCutoffs;
+    }
+
+    /* FUNCTION: Get Color From Histogram */
+    function getColorFromHist(value, cutoff_list) {
+        var binOneColor = 'red';
+        var binTwoColor = 'yellow';
+        var binThreeColor = 'green';
+        var binFourColor = 'blue';
+        var binFiveColor = 'purple';
+        var defaultColor = 'black';
+        if (isNaN(value)) {
+          return defaultColor;
+        } else if (value <= cutoff_list[0]) {
+            return binOneColor;
+        } else if (value <= cutoff_list[1]) {
+            return binTwoColor;
+        } else if (value <= cutoff_list[2]) {
+            return binThreeColor;
+        } else if (value <= cutoff_list[3]) {
+            return binFourColor;
+        } else if (value <= cutoff_list[4]) {
+            return binFiveColor;
+        } else {
+            return defaultColor;
         }
     }
 
@@ -515,6 +547,13 @@
         success: function(data) {
             matches = data;
         }
+    }).complete($.ajax({
+        type: 'GET',
+        url: histogram,
+        dataType: 'json',
+        success: function(data) {
+            histogram_data = data;
+        }
     }).complete(function() {
         /* Sort and Index Chromosomes */
         xChr.sort(sortChr);
@@ -523,6 +562,10 @@
         var xChrIndexed = indexChr(xChr);
         var yChrIndexed = indexChr(yChr);
         var zChrIndexed = indexChr(zChr);
+
+        /* Establish Color Bin Cutoffs */
+        var logKsBins = getHistogramBins("Ks", true, "mean", histogram_data);
+        var logKnBins = getHistogramBins("Ks", true, "mean", histogram_data);
 
         /* 3d Object: Axes */
         console.log("Building X Axis");
@@ -615,9 +658,9 @@
                         var xPos = coordinate[0];
                         var yPos = coordinate[1];
                         var zPos = coordinate[2];
-                        var Ks = coordinate[3]['mean']['Ks'];
-                        var Kn = coordinate[3]['mean']['Kn'];
-                        var dotMat = new THREE.MeshBasicMaterial({color: getColorFromHist(Ks)});  //TODO: Make Better
+                        var logKs = Math.log10(coordinate[3]['mean']['Ks']);
+                        var logKn = Math.log10(coordinate[3]['mean']['Kn']);
+                        var dotMat = new THREE.MeshBasicMaterial({color: getColorFromHist(logKs, logKsBins)});
                         var dot = new THREE.Mesh (dotGeo, dotMat);
                         dot.position.x = xChrIndexed[x_ch]['start'] + (xPos * scaleFactor);
                         dot.position.y = yChrIndexed[y_ch]['start'] + (yPos * scaleFactor);
@@ -633,7 +676,7 @@
         matchDots.translateZ(-startPositions.z / 2);
         scene.add(matchDots);
 
-    })));
+    }))));
 
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~ANIMATE LOOP~~~~
