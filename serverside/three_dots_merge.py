@@ -2,6 +2,10 @@ __author__ = 'senorrift'
 # TODO: Add Kn/Ks Support
 
 import json
+from copy import copy, deepcopy
+import plotly.plotly as py
+from plotly.graph_objs import *
+import math
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 #                                                                                                                     #
@@ -260,6 +264,10 @@ def find_matches(species_coordinate, link1, link2, link3):
             for z_chr in yz_data[z_species_id]["chromosomes"]:
                 matches[x_chr["name"]][y_chr["name"]][z_chr["name"]] = []
 
+    # Data Structure to Hold Histogram Information
+    hist_data = {"Ks": {"xy": [], "xz": [], "yz": [], 'mean': []},
+                 "Kn": {"xy": [], "xz": [], "yz": [], 'mean': []}}
+
     # Find 3-Way Matches
     match_count = 0
     for x_ch in xy_cords:
@@ -272,36 +280,124 @@ def find_matches(species_coordinate, link1, link2, link3):
                                 for yz_match in zy_cords[z_ch][y_ch]:
                                     if yz_match[0] == xy_match[1]:
                                         if yz_match[1] == xz_match[1]:
+                                            # Build coordinate template.
                                             coordinate = [0, 0, 0, {}]
+                                            # Populate XYZ coordinate fields.
                                             coordinate[0] = xy_match[0]
                                             coordinate[1] = xy_match[1]
                                             coordinate[2] = xz_match[1]
+                                            # Populate Ks/Kn coordinate field.
                                             coordinate[3]['xy'] = xy_match[2]
                                             coordinate[3]['xz'] = xz_match[2]
                                             coordinate[3]['yz'] = yz_match[2]
-                                            if 'NA' in xy_match[2].values() or 'NA' in xz_match[2].values() or 'NA' in yz_match[2].values():
+                                            if 'NA' in xy_match[2].values() or 'NA' in xz_match[2].values() or \
+                                                            'NA' in yz_match[2].values():
                                                 meanKs = 'NA'
                                                 meanKn = 'NA'
                                             else:
-                                                meanKs = str((float(xy_match[2]['Ks']) + float(xz_match[2]['Ks']) + float(yz_match[2]['Ks'])) / 3)
-                                                meanKn = str((float(xy_match[2]['Kn']) + float(xz_match[2]['Kn']) + float(yz_match[2]['Kn'])) / 3)
+                                                meanKs = str((float(xy_match[2]['Ks']) + float(xz_match[2]['Ks']) +
+                                                              float(yz_match[2]['Ks'])) / 3)
+                                                meanKn = str((float(xy_match[2]['Kn']) + float(xz_match[2]['Kn']) +
+                                                              float(yz_match[2]['Kn'])) / 3)
                                             coordinate[3]['mean'] = {'Ks': meanKs, 'Kn': meanKn}
-                                            # Ignore duplicate hits
+                                            # Add coordinate to matches, ignoring duplicates.
                                             if coordinate not in matches[x_ch][y_ch][z_ch]:
                                                 matches[x_ch][y_ch][z_ch].append(coordinate)
                                                 match_count += 1
-    # Return Matches and Match Count
-    return matches, match_count
+                                            # Populate Ks field in "hist_data".
+                                            try:
+                                                hist_data['Ks']['xy'].append(float(xy_match[2]['Ks']))
+                                                hist_data['Ks']['xz'].append(float(xz_match[2]['Ks']))
+                                                hist_data['Ks']['yz'].append(float(yz_match[2]['Ks']))
+                                                hist_data['Ks']['mean'].append(float(meanKs))
+                                            except (TypeError, ValueError):
+                                                pass
+                                            # Populate Kn field in "hist_data".
+                                            try:
+                                                hist_data['Kn']['xy'].append(float(xy_match[2]['Kn']))
+                                                hist_data['Kn']['xz'].append(float(xz_match[2]['Kn']))
+                                                hist_data['Kn']['yz'].append(float(yz_match[2]['Kn']))
+                                                hist_data['Kn']['mean'].append(float(meanKn))
+                                            except (TypeError, ValueError):
+                                                pass
+
+    # Return Matches, Match Count, and Histogram Data
+    return matches, match_count, hist_data
 
 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+def generate_histogram(histo_data):
+    # Log transform data
+    log_data = {}
+    for calculation in histo_data:
+        log_data[calculation] = {}
+        for comparison in histo_data[calculation]:
+            log_data[calculation][comparison] = [math.log(n, 10) for n in histo_data[calculation][comparison]]
+
+    # Define 'info' sub-template.
+    info_subtmpl = {'min': 0,
+                    'max': 0,
+                    'dif': 0,
+                    'bin_size': 0,
+                    'bin1': [0, 0],
+                    'bin2': [0, 0],
+                    'bin3': [0, 0],
+                    'bin4': [0, 0],
+                    'bin5': [0, 0]}
+    # Define 'info' template.
+    info_tmpl = {'xy': deepcopy(info_subtmpl),
+                 'xz': deepcopy(info_subtmpl),
+                 'yz': deepcopy(info_subtmpl),
+                 'mean': deepcopy(info_subtmpl)}
+
+    #Define 'log_info' template.
+    log_info = {'Ks': deepcopy(info_tmpl),
+                'Kn': deepcopy(info_tmpl)}
+
+    # Define 'value_info' template.
+    value_info = deepcopy(log_info)
+
+    # Define a function to populate info dictionaries.
+    def populate_info(info_dict, data_dict):
+        for calc in data_dict:
+            for comp in data_dict[calc]:
+                #print calc, comp, min(log_data[calc][comp]), max(log_data[calc][comp])
+                info_dict[calc][comp]['min'] = min(data_dict[calc][comp])
+                info_dict[calc][comp]['max'] = max(data_dict[calc][comp])
+                info_dict[calc][comp]['dif'] = abs(max(data_dict[calc][comp]) - min(data_dict[calc][comp]))
+                info_dict[calc][comp]['bin_size'] = abs(max(data_dict[calc][comp]) - min(data_dict[calc][comp])) / 5
+                info_dict[calc][comp]['bin1'][0] = min(data_dict[calc][comp])
+                info_dict[calc][comp]['bin1'][1] = info_dict[calc][comp]['bin1'][0] + info_dict[calc][comp]['bin_size']
+                info_dict[calc][comp]['bin2'][0] = copy(info_dict[calc][comp]['bin1'][1])
+                info_dict[calc][comp]['bin2'][1] = info_dict[calc][comp]['bin2'][0] + info_dict[calc][comp]['bin_size']
+                info_dict[calc][comp]['bin3'][0] = copy(info_dict[calc][comp]['bin2'][1])
+                info_dict[calc][comp]['bin3'][1] = info_dict[calc][comp]['bin3'][0] + info_dict[calc][comp]['bin_size']
+                info_dict[calc][comp]['bin4'][0] = copy(info_dict[calc][comp]['bin3'][1])
+                info_dict[calc][comp]['bin4'][1] = info_dict[calc][comp]['bin4'][0] + info_dict[calc][comp]['bin_size']
+                info_dict[calc][comp]['bin5'][0] = copy(info_dict[calc][comp]['bin4'][1])
+                info_dict[calc][comp]['bin5'][1] = max(data_dict[calc][comp])
+        return info_dict
+
+    # Populate 'log_info'.
+    log_info = populate_info(log_info, log_data)
+    # Populate 'value_info'.
+    value_info = populate_info(value_info, histo_data)
+
+    # Build final histogram dictionary.
+    histogram_dict = {'values': {'data': histo_data, 'info': value_info},
+                      'logten': {'data': log_data, 'info': log_info}}
+
+    return histogram_dict
+
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 #                                                                                                                     #
 # Main Script                                                                                                         #
 #                                                                                                                     #
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # User Inputs
-output_file = 'chicken_human_mouse.json'
+synt_out = 'chicken_human_mouse.json'
+hist_out = 'chm_histogram.json'
 x = '22736'
 y = '25747'
 z = '7073'
@@ -318,11 +414,22 @@ if parse_file:
     file1 = "parsed_" + file1
     file2 = "parsed_" + file2
     file3 = "parsed_" + file3
-    output_file = "parsed_" + output_file
+    synt_out = "parsed_" + synt_out
+    hist_out = "parsed_" + hist_out
 
-# Execute Script, Dump JSON with Hits
-all_matches, match_number = find_matches([x, y, z], file1, file2, file3)
-json.dump(all_matches, open(output_file, "w"))
+# Execute match finding.
+all_matches, match_number, histogram_data = find_matches([x, y, z], file1, file2, file3)
+
+# Parse histogram_data
+histogram = generate_histogram(histogram_data)
+
+# Dump JSONs - matches .
+json.dump(all_matches, open(synt_out, "w"))
+json.dump(histogram, open(hist_out, "w"))
 
 # Print Match Number
 print "You Found %s Matches!" % str(match_number)
+log_ks = histogram['logten']['data']['Ks']['mean']
+log_kn = histogram['logten']['data']['Kn']['mean']
+print "Mean Ks Values Range From %s to %s, with a total size of %s" % (str(min(log_ks)), str(max(log_ks)), str(abs(max(log_ks) - min(log_ks))))
+print "Mean Kn Values Range From %s to %s" % (str(min(log_kn)), str(max(log_kn)))
