@@ -53,16 +53,19 @@
         }
 
         #options {
-            padding-left: 5px;
+            padding: 5px;
         }
 
         .option_tag {
-            width: 80%;
+            width: 40%;
             font-size: 18px;
+            float: left;
         }
-
+        .option_select {
+        }
         #histogram {
             margin-top: 10px;
+
         }
 
     </style>
@@ -78,10 +81,31 @@
     <div id="right">
         <div id="options" class="contentBox">
             <div class="option_tag">Select Visualization:</div>
-            <div class="option_tag">Color Points By:</>
-            <div class="option_tag">Adjust Background Color:</>
-            <p>Relaunch</p>
+            <div class="option_select">
+                <select id="dataset_select">
+                    <option value="chm" selected="selected">Chicken/Human/Mouse</option>
+                    <option value="hcg">Human/Chimp/Gorilla</option>
+                    <option value="arab">Arabidopsis/Etc/Etc</option>
+                </select>
+            </div><br>
+            <div class="option_tag">Color Points By:</div>
+            <div class="option_select">
+                <select id="knks_select">
+                    <option value="ks" selected="selected">Synonymous Mutation (Ks)</option>
+                    <option value="kn">Non-Synonymous Mutation (Kn)</option>
+                </select>
+                <select id="comparison_select">
+                    <option value="xy">XY</option>
+                    <option value="xz">XZ</option>
+                    <option value="yz">YZ</option>
+                    <option value="mean" selected="selected">Mean</option>
+                </select>
+            </div><br>
+            <div class="option_tag">Adjust Background Color:</div>
+            <input class=option_select id=bgslider type="range" min="1" value="1" max="10" step="1" autocomplete="on">
+
         </div>
+
         <div id="histogram" class="contentBox">
             <p>HISTOGRAM WILL GO HERE</p>
         </div>
@@ -97,6 +121,26 @@
 <script src="js/three.min.js"></script>
 <!--FlatOrbitControls.js-->
 <script src="js_mod/FlatOrbitControls.js"></script>
+
+<!-- Background Slider Script -->
+<script type="text/javascript">
+    function getColor(slideValue) {
+        var colorCodes = ["#f5f5f5", "#dcdcdc", "#c4c4c4", "#ababab", "#939393",
+                          "#7a7a7a", "#626262", "#494949", "#313131", "#181818"];
+        return colorCodes[slideValue - 1]
+    }
+
+    $(document).ready( function() {
+        var renderDiv = $("#rendering");
+        var bg_slider = $("#bgslider");
+        renderDiv.css('background-color', getColor(bg_slider.val()));
+        bg_slider.change( function() {
+            console.log(bg_slider.val())
+            color = getColor(bg_slider.val());
+            renderDiv.css('background-color', color);
+        });
+    })
+</script>
 
 <!-- Options Script -->
 <script type="text/javascript">
