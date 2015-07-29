@@ -65,14 +65,14 @@
         }
         #histogram {
             margin-top: 10px;
-
+            height: 500px;
         }
 
     </style>
 </head>
 
 <body>
-<h1>3d Synteny Demo: <span id="current_demo">Chicken v. Human v. Mouse</span></h1>
+<h1>3d Synteny Demo: <span id="current_demo"></span></h1>
 <div id="data">
     <div id="rendering" class="contentBox">
         <canvas id="canvas"></canvas>
@@ -106,7 +106,6 @@
         </div>
 
         <div id="histogram" class="contentBox">
-            <p>HISTOGRAM WILL GO HERE</p>
         </div>
     </div>
 
@@ -120,8 +119,12 @@
 <script src="js/three.min.js"></script>
 <!--FlatOrbitControls.js-->
 <script src="js_mod/FlatOrbitControls.js"></script>
+<!--D3-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+<!--Plotly-->
+<script src="https://d14fo0winaifog.cloudfront.net/plotly-basic.js"></script>
 
-<!-- Background Slider Script -->
+<!-- Page Dynamics Script -->
 <script type="text/javascript">
     function getColor(slideValue) {
         var colorCodes = ["#f5f5f5", "#dcdcdc", "#c4c4c4", "#ababab", "#939393",
@@ -129,7 +132,20 @@
         return colorCodes[slideValue - 1]
     }
 
+    function getHeaderText(dataSelected) {
+        switch (dataSelected) {
+            case "chm":
+                return 'Chicken v. Human v. Mouse';
+                break;
+            case "chmn":
+                return 'NEW Chicken v. Human v. Mouse';
+                break;
+            default:
+                return 'Visualization Text Not Specified';
+        }
+    }
     $(document).ready( function() {
+        /* Change Background Color w/ Slider */
         var renderDiv = $("#rendering");
         var bg_slider = $("#bgslider");
         renderDiv.css('background-color', getColor(bg_slider.val()));
@@ -138,6 +154,14 @@
             color = getColor(bg_slider.val());
             renderDiv.css('background-color', color);
         });
+
+        /* Change Header Description w/ Selection */
+        var headerSpan = $("#current_demo");
+        var selector = $("#dataset_select");
+        headerSpan.html( getHeaderText(selector.val()) );
+        selector.change( function() {
+            headerSpan.html( getHeaderText(selector.val()) );
+        })
     })
 </script>
 
@@ -187,14 +211,15 @@
 
 
         function renderIt() {
-            /*-----------------------------------------------------------------------------------------------------------------
+            /*---------------------------------------------------------------------------------------------------------
              ~~~~SETUP CANVAS & VR ENVIRONMENT~~~~
-             -----------------------------------------------------------------------------------------------------------------*/
+             --------------------------------------------------------------------------------------------------------*/
             var width = window.innerWidth * 0.7; //1500;
             var height = window.innerHeight * 0.9; //1000;
 
             /* Setup three.js WebGL renderer */
-            var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true, canvas: document.getElementById('canvas')} );
+            var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true,
+                                                      canvas: document.getElementById('canvas')} );
             // NOTE: Can remove "canvas", but them must uncomment both viscontainer lines below
 
             /* Place Render in DIV */
@@ -219,9 +244,9 @@
             /* Apply FlatOrbitControls. */
             var controls = new THREE.FlatOrbitControls( camera );
 
-            /*-----------------------------------------------------------------------------------------------------------------
+            /*---------------------------------------------------------------------------------------------------------
              ~~~~OPTIONS~~~~
-             ----------------------------------------------------------------------------------------------------------------*/
+             --------------------------------------------------------------------------------------------------------*/
 
             /* Scaling Options */
             var scaleFactor = 0.00000001;
@@ -274,9 +299,9 @@
                     break;
             }
 
-            /*-----------------------------------------------------------------------------------------------------------------
+            /*---------------------------------------------------------------------------------------------------------
              ~~~~GLOBAL 3D OBJECT VARIABLES~~~~
-             ----------------------------------------------------------------------------------------------------------------*/
+             --------------------------------------------------------------------------------------------------------*/
 
             /* Global Object Variables */
             var xChr = new Array();
@@ -296,9 +321,9 @@
 
             var histogram_data = new Array();
 
-            /*-----------------------------------------------------------------------------------------------------------------
+            /*---------------------------------------------------------------------------------------------------------
              ~~~~FUNCTIONS~~~~
-             ----------------------------------------------------------------------------------------------------------------*/
+             --------------------------------------------------------------------------------------------------------*/
 
             /* FUNCTION: Index Chromosome Info by Name */
             function indexChr(chr) {
@@ -420,7 +445,8 @@
                 }
 
                 histInfo = histogram_object[logFactor]["info"][Ks_or_Kn][comparison];
-                var binCutoffs = [histInfo.bin1[1], histInfo.bin2[1], histInfo.bin3[1], histInfo.bin4[1], histInfo.bin5[1]];
+                var binCutoffs = [histInfo.bin1[1], histInfo.bin2[1],
+                                  histInfo.bin3[1], histInfo.bin4[1], histInfo.bin5[1]];
                 return binCutoffs;
             }
 
@@ -449,9 +475,9 @@
                 }
             }
 
-            /*-----------------------------------------------------------------------------------------------------------------
+            /*---------------------------------------------------------------------------------------------------------
              ~~~~GET DATA & CREATE 3D OBJECTS~~~~
-             ----------------------------------------------------------------------------------------------------------------*/
+             --------------------------------------------------------------------------------------------------------*/
 
             $.ajax({
                 type: 'GET',
@@ -598,7 +624,9 @@
                                 var zPos = coordinate[2];
                                 var logKnKs = Math.log10(coordinate[3][comparisonSelect][knKsSelect]);
                                 //var logKn = Math.log10(coordinate[3]['mean']['Kn']);
-                                var dotMat = new THREE.MeshBasicMaterial({color: getColorFromHist(logKnKs, logKnKsBins)});
+                                var dotMat = new THREE.MeshBasicMaterial(
+                                        {color: getColorFromHist(logKnKs, logKnKsBins)}
+                                );
                                 var dot = new THREE.Mesh (dotGeo, dotMat);
                                 dot.position.x = xChrIndexed[x_ch]['start'] + (xPos * scaleFactor);
                                 dot.position.y = yChrIndexed[y_ch]['start'] + (yPos * scaleFactor);
@@ -614,11 +642,49 @@
                 matchDots.translateZ(-startPositions.z / 2);
                 scene.add(matchDots);
 
+                /* Histogram */
+                var histogramInfo = histogram_data.logten.info[knKsSelect][comparisonSelect];
+                var histogramData = histogram_data.logten.data[knKsSelect][comparisonSelect];
+
+                console.log(histogramInfo);
+                var binOneTitle = histogramInfo.bin1[0].toFixed(4).toString() + " to " + histogramInfo.bin1[1].toFixed(4).toString();
+                var binTwoTitle = histogramInfo.bin2[0].toFixed(4).toString() + " to " + histogramInfo.bin2[1].toFixed(4).toString();
+                var binThreeTitle = histogramInfo.bin3[0].toFixed(4).toString() + " to " + histogramInfo.bin3[1].toFixed(4).toString();
+                var binFourTitle = histogramInfo.bin4[0].toFixed(4).toString() + " to " + histogramInfo.bin4[1].toFixed(4).toString();
+                var binFiveTitle = histogramInfo.bin5[0].toFixed(4).toString() + " to " + histogramInfo.bin5[1].toFixed(4).toString();
+                var xax = [binOneTitle, binTwoTitle, binThreeTitle, binFourTitle, binFiveTitle];
+                var binOneCount = 0;
+                var binTwoCount = 0;
+                var binThreeCount = 0;
+                var binFourCount = 0;
+                var binFiveCount = 0;
+                histogramData.forEach( function(value) {
+                    if (value <= histogramInfo.bin1[1]) {
+                        binOneCount += 1;
+                    } else if (value <= histogramInfo.bin2[1]) {
+                        binTwoCount += 1;
+                    } else if (value <= histogramInfo.bin3[1]) {
+                        binThreeCount += 1;
+                    } else if (value <= histogramInfo.bin4[1]) {
+                        binFourCount += 1;
+                    } else if (value <= histogramInfo.bin5[1]) {
+                        binFiveCount += 1;
+                    }
+                });
+                var yax = [binOneCount, binTwoCount, binThreeCount, binFourCount, binFiveCount];
+                var histPlotData = [{
+                    x: xax,
+                    y: yax,
+                    marker: {color: ['red', 'yellow', 'green', 'blue', 'purple']},
+                    type: "bar"
+                }];
+                Plotly.plot("histogram", histPlotData);
+
             }))));
 
-            /*-----------------------------------------------------------------------------------------------------------------
+            /*---------------------------------------------------------------------------------------------------------
              ~~~~ANIMATE LOOP~~~~
-             ----------------------------------------------------------------------------------------------------------------*/
+             --------------------------------------------------------------------------------------------------------*/
 
             function animate() {
                 /* Update controls. */
@@ -632,9 +698,9 @@
             }
             animate();
 
-            /*-----------------------------------------------------------------------------------------------------------------
+            /*---------------------------------------------------------------------------------------------------------
              ~~~~WINDOW RESIZE HANDLER~~~~
-             ----------------------------------------------------------------------------------------------------------------*/
+             --------------------------------------------------------------------------------------------------------*/
 
             function onWindowResize() {
                 width = window.innerWidth * 0.8; //1500;
