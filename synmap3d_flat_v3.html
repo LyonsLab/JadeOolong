@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>3d Synteny Demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #ffffff;
+            /*color: #fff;*/
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0px;
+            padding: 0px;
+            /*overflow: scroll;*/
+        }
+
+        h1 {
+            color: #119911;
+            padding: 5px;
+            margin: 0px;
+        }
+
+        #current_demo {
+            color: #c0c0c0;
+            font-size: smaller;
+        }
+
+        .contentBox {
+            background-color: #F5F5F5;
+            /*width: auto;*/
+            height: auto;
+            border: 1px solid #119911;
+            border-radius: 0px;
+            margin: 0px;
+            box-sizing: border-box;
+            padding: 0px;
+            position: relative;
+        }
+
+        #rendering {
+            margin-top: 0px;
+            margin-bottom: 2px;
+            float: left;
+            width: 70%;
+        }
+
+        #right {
+            margin-top: 0px;
+            margin-bottom: 2px;
+            float: right;
+            width: 30%
+        }
+
+        #options {
+            padding-left: 5px;
+        }
+
+        .option_tag {
+            width: 80%;
+            font-size: 18px;
+        }
+
+        #histogram {
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+
+<body>
+<h1>3d Synteny Demo: <span id="current_demo">Chicken v. Human v. Mouse</span></h1>
+<div id="data">
+    <div id="rendering" class="contentBox">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="right">
+        <div id="options" class="contentBox">
+            <div class="option_tag">Select Visualization:</div>
+            <div class="option_tag">Color Points By:</>
+            <div class="option_tag">Adjust Background Color:</>
+            <p>Relaunch</p>
+        </div>
+        <div id="histogram" class="contentBox">
+            <p>HISTOGRAM WILL GO HERE</p>
+        </div>
+    </div>
+
+</div>
+
+</body>
+
+<!--jQuery-->
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<!--three.js-->
+<script src="js/three.min.js"></script>
+<!--FlatOrbitControls.js-->
+<script src="js_mod/FlatOrbitControls.js"></script>
+
+<!-- Options Script -->
+<script type="text/javascript">
+
+    $(document).ready( function() {
+        var contentDiv = $(".opts_content");
+        contentDiv.append($("#opts_tmpl").html());
+
+        $(".header > .sections > div").hover(
+                function() {
+                    if (!$(this).hasClass( "active" )) {
+                        $(this).addClass("hover");
+                        $(".sections > div").unbind("click").click( function() {
+                            /* Change Option Content Formatting */
+                            $(".active").removeClass("active");
+                            $(this).removeClass("hover");
+                            $(this).addClass("active");
+                            /* Populate opts_content*/
+                            var newCategory = $(this).attr("id");
+                            switch (newCategory) {
+                                case "options":
+                                    //console.log("Options Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#opts_tmpl").html());
+                                    break;
+                                case "data":
+                                    //console.log("Data Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#data_tmpl").html());
+                                    break;
+                                case "export":
+                                    //console.log("Export Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#export_tmpl").html());
+                                    break;
+                                case "help":
+                                    //console.log("Help Menu");
+                                    contentDiv.empty();
+                                    contentDiv.append($("#help_tmpl").html());
+                                    break;
+                                default:
+                                    console.warn("Unknown Menu");
+                            }
+                        });
+                    }
+                }, function() {
+                    if (!$(this).hasClass( "active" )) {
+                        $(this).removeClass("hover")
+                    }
+                });
+    })
+</script>
+
+<!--Template Script-->
+<script id="opts_tmpl" type="text/template">
+    <div>Options Zone</div>
+</script>
+
+<script id="data_tmpl" type="text/template">
+    <div>Genomes</div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">X-Axis Genome:</div>
+        <div class="opts_blocks genome_select">
+            <input id="genomeX" size="50">
+        </div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Y-Axis Genome:</div>
+        <div class="opts_blocks genome_select">
+            <input id="genomeY" size="50">
+        </div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Z-Axis Genome:</div>
+        <div class="opts_blocks genome_select">
+            <input id="genomeZ" size="50">
+        </div>
+    </div>
+
+    <div>Options</div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Hide contigs without synteny:</div>
+        <div class="opts_blocks"><input type="checkbox"></div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Minimum contig length (bp):</div>
+        <div class="opts_blocks"><input type="number" size="50"></div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Sort chromosomes by:</div>
+        <div class="opts_blocks select_block">
+            <select>
+                <option value="name">Name</option>
+                <option value="length">Length</option>
+            </select>
+        </div>
+    </div>
+    <div style="padding-left:10px">
+        <div class="opts_blocks desc_block">Enable VR mode:</div>
+        <div class="opts_blocks"><input type="checkbox"></div>
+    </div>
+
+    <div>
+        <div class="smbutton r" style="display: inline-block;">Re-Launch</div>
+        <br>
+    </div>
+</script>
+
+<script id="export_tmpl" type="text/template">
+    <div>
+        <div class="opts_blocks desc_block">Export Visualization</div>
+        <div class="opts_blocks select_block">
+            <select>
+                <option value="pdf">PDF</option>
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+            </select>
+        </div>
+        <div class="opts_blocks smbutton">Export</div>
+    </div>
+
+    <div>Export Data</div>
+</script>
+
+<script id="help_tmpl" type="text/template">
+    <div>Help Zone</div>
+</script>
+
+
+<!--Visualization Script-->
+<script type="text/javascript">
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~SELECT A VISUALIZATION~~~~
+     -----------------------------------------------------------------------------------------------------------------*/
+    var visSelect = "chicken_human_mouse";
+    //DEPRICIATED:
+    //var visSelect = "dog_human_chimp";
+    //var visSelect = "human_chimp_gorilla";
+
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~SETUP CANVAS & VR ENVIRONMENT~~~~
+     -----------------------------------------------------------------------------------------------------------------*/
+    var width = window.innerWidth * 0.7; //1500;
+    var height = window.innerHeight * 0.9; //1000;
+
+    /* Setup three.js WebGL renderer */
+    var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true, canvas: document.getElementById('canvas')} );
+    // NOTE: Can remove "canvas", but them must uncomment both viscontainer lines below
+
+    /* Place Render in DIV */
+    //visContainer = document.getElementById('canvas'); //REMOVED BY DECLARING CANVAS
+    //document.body.appendChild( visContainer ); //THIS MAY BE USED AT SOME POINT?
+    renderer.setSize( width, height);
+    //visContainer.appendChild( renderer.domElement ); //REMOVED BY DECLARING CANVAS
+
+    /* Place Renderer in Document - DEPRECIATED */
+    //renderer.setSize( window.innerWidth, window.innerHeight );
+    //document.body.appendChild( renderer.domElement );
+
+    /* Create a three.js scene */
+    var scene = new THREE.Scene();
+
+    /* Create a three.js camera */
+    var camera = new THREE.PerspectiveCamera( 75, width / height, 1, 100 );
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = 30;
+
+    /* Apply FlatOrbitControls. */
+    var controls = new THREE.FlatOrbitControls( camera );
+
+    /* Halt scrolling when controlling visualization. */
+    $(document).ready( function() {
+        $('#canvas').hover( function() {
+            $("body").css("overflow", "hidden")
+        }, function() {
+            $("body").css("overflow", "scroll")
+        });
+    });
+
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~OPTIONS~~~~
+     ----------------------------------------------------------------------------------------------------------------*/
+
+    /* Scaling Options */
+    var scaleFactor = 0.00000001;
+    var axisWidth = 0.05;
+
+    /* Assign Files by Selected Visualization */
+    var xId, yID, zID, xy_json, xz_json, yz_json, threeway_json, histogram;
+    switch(visSelect) {
+        case "chicken_human_mouse":
+            xID = '22736';
+            yID = '25747';
+            zID = '7073';
+            xy_json = './data/parsed_22736_25747_synteny.json';
+            xz_json = './data/parsed_22736_7073_synteny.json';
+            yz_json = './data/parsed_25747_7073_synteny.json';
+            threeway_json = './data/parsed_chicken_human_mouse.json';
+            histogram = './data/parsed_chm_histogram.json';
+            break;
+        /* DEPRICIATED: UPDATE TO NEW dotplot_dots.py FILES
+         case "dog_human_chimp":
+         xID = '7057';  // Dog
+         yID = '25712'; // Human
+         zID = '11691'; // Chimp
+         xy_json = './data/human_dog.json';
+         xz_json = './data/chimp_dog.json';
+         yz_json = './data/human_chimp.json';
+         threeway_json = './data/dog_human_chimp.json';
+         break;
+         case "human_chimp_gorilla":
+         xID = '25712'; // Human
+         yID = '11691'; // Chimp
+         zID = '11931'; // Gorilla
+         xy_json = './data/parsed_human_chimp.json';
+         xz_json = './data/parsed_gorilla_human.json';
+         yz_json = './data/parsed_gorilla_chimp.json';
+         threeway_json = './data/parsed_human_chimp_gorilla.json';
+         break; */
+        default:
+            console.log("No Species Selected");
+            break;
+    }
+
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~GLOBAL 3D OBJECT VARIABLES~~~~
+     ----------------------------------------------------------------------------------------------------------------*/
+
+    /* Global Object Variables */
+    var xChr = new Array();
+    var xAxis = new THREE.Object3D();
+
+    var yChr = new Array();
+    var yAxis = new THREE.Object3D();
+
+    var zChr = new Array();
+    var zAxis = new THREE.Object3D();
+
+    var grid = new THREE.Object3D();
+    var gridToggle = true;
+
+    var matches = new Array();
+    var matchDots = new THREE.Object3D();
+
+    var histogram_data = new Array();
+
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~FUNCTIONS~~~~
+     ----------------------------------------------------------------------------------------------------------------*/
+
+    /* FUNCTION: Index Chromosome Info by Name */
+    function indexChr(chr) {
+        var chrIndexed = {};
+        chr.forEach( function(e) {
+            chrIndexed[e.name] = e;
+        });
+        return chrIndexed
+    }
+
+    /* FUNCTION: Sort Chromosome List */
+    function sortChr(a,b){
+        first = parseInt(a.name);
+        second = parseInt(b.name);
+
+        if (isNaN(first) && isNaN(second)) {
+            if (a.name < b.name) {
+                return -1;
+            } else if (a.name > b.name) {
+                return 1;
+            }
+        } else if (isNaN(first)) {
+            return 1;
+        } else if (isNaN(second)) {
+            return -1;
+        } else {
+
+            if(first == second) {
+                if (a.name < b.name) {
+                    return -1;
+                } else if (a.name > b.name) {
+                    return 1;
+                }
+            }
+
+            else if(first < second) {
+                return -1;
+            }
+
+            else if(first > second) {
+                return 1;
+            }}
+    }
+
+    /* FUNCTION: Build Axis from Chromosome List */
+    var startPositions = {"x": 0, "y": 0, "z": 0};
+    function buildAxisFromChr(chr, focusAxis) {
+        var axis = new THREE.Object3D();
+        var colorToggle = true;
+
+        var altAxes = ['x', 'y', 'z'];
+        altAxes.splice(altAxes.indexOf(focusAxis), 1);
+
+        var colorOne, colorTwo;
+        switch (focusAxis) {
+            case "x":
+                colorOne = 'darkred';
+                colorTwo = 'red';
+                break;
+            case "y":
+                colorOne = 'darkblue';
+                colorTwo = 'blue';
+                break;
+            case "z":
+                colorOne = 'green';
+                colorTwo = 'lightgreen';
+                break;
+            default:
+                colorOne = '';
+                colorTwo = '';
+        }
+
+        chr.forEach(function (e) {
+            var chLen = e.length * scaleFactor;
+
+            var chGeo;
+            if (focusAxis == 'x') {
+                chGeo = new THREE.BoxGeometry( chLen, axisWidth, axisWidth );
+            } else if (focusAxis == 'y') {
+                chGeo = new THREE.BoxGeometry( axisWidth, chLen, axisWidth );
+            } else if (focusAxis == 'z') {
+                chGeo = new THREE.BoxGeometry( axisWidth, axisWidth, chLen );
+            } else {
+                console.log("Invalid Focus Axis, please select x y or z");
+            }
+
+            var chMat;
+            if (colorToggle) {
+                chMat = new THREE.MeshBasicMaterial({color: colorOne});
+                colorToggle = false;
+            } else {
+                chMat = new THREE.MeshBasicMaterial({color: colorTwo});
+                colorToggle = true;
+            }
+
+            var ch = new THREE.Mesh( chGeo, chMat );
+
+            ch.position[focusAxis] = startPositions[focusAxis] + (chLen / 2);
+            ch.position[altAxes[0]] = -(axisWidth / 2);
+            ch.position[altAxes[1]] = -(axisWidth / 2);
+
+            axis.add( ch );
+
+            e["start"] = startPositions[focusAxis];
+            startPositions[focusAxis] += chLen;
+            e["end"] = startPositions[focusAxis];
+        });
+
+        return axis;
+    }
+
+    /* FUNCTION: Generate Cutoff List */
+    function getHistogramBins(Ks_or_Kn, logBool, comparison, histogram_object) {
+        var logFactor;
+        if (logBool) {
+            logFactor = "logten"
+        } else {
+            logFactor = "values"
+        }
+
+        histInfo = histogram_object[logFactor]["info"][Ks_or_Kn][comparison];
+        var binCutoffs = [histInfo.bin1[1], histInfo.bin2[1], histInfo.bin3[1], histInfo.bin4[1], histInfo.bin5[1]];
+        return binCutoffs;
+    }
+
+    /* FUNCTION: Get Color From Histogram */
+    function getColorFromHist(value, cutoff_list) {
+        var binOneColor = 'red';
+        var binTwoColor = 'yellow';
+        var binThreeColor = 'green';
+        var binFourColor = 'blue';
+        var binFiveColor = 'purple';
+        var defaultColor = 'black';
+        if (isNaN(value)) {
+            return defaultColor;
+        } else if (value <= cutoff_list[0]) {
+            return binOneColor;
+        } else if (value <= cutoff_list[1]) {
+            return binTwoColor;
+        } else if (value <= cutoff_list[2]) {
+            return binThreeColor;
+        } else if (value <= cutoff_list[3]) {
+            return binFourColor;
+        } else if (value <= cutoff_list[4]) {
+            return binFiveColor;
+        } else {
+            return defaultColor;
+        }
+    }
+
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~GET DATA & CREATE 3D OBJECTS~~~~
+     ----------------------------------------------------------------------------------------------------------------*/
+
+    $.ajax({
+        type: 'GET',
+        url: xz_json,
+        dataType: 'json',
+        success: function(data) {
+            xChr = data["genomes"][xID]["chromosomes"];
+            zChr = data["genomes"][zID]["chromosomes"];
+        }
+    }).complete( $.ajax({
+        type: 'GET',
+        url: xy_json,
+        dataType: 'json',
+        success: function(data) {
+            yChr = data["genomes"][yID]["chromosomes"];
+        }
+    }).complete($.ajax({
+        type: 'GET',
+        url: threeway_json,
+        dataType: 'json',
+        success: function(data) {
+            matches = data;
+        }
+    }).complete($.ajax({
+        type: 'GET',
+        url: histogram,
+        dataType: 'json',
+        success: function(data) {
+            histogram_data = data;
+        }
+    }).complete(function() {
+        /* Sort and Index Chromosomes */
+        xChr.sort(sortChr);
+        yChr.sort(sortChr);
+        zChr.sort(sortChr);
+        var xChrIndexed = indexChr(xChr);
+        var yChrIndexed = indexChr(yChr);
+        var zChrIndexed = indexChr(zChr);
+
+        /* Establish Color Bin Cutoffs */
+        var logKsBins = getHistogramBins("Ks", true, "mean", histogram_data);
+        var logKnBins = getHistogramBins("Ks", true, "mean", histogram_data);
+
+        /* 3d Object: Axes */
+        xAxis = buildAxisFromChr(xChr, 'x');
+        yAxis = buildAxisFromChr(yChr, 'y');
+        zAxis = buildAxisFromChr(zChr, 'z');
+
+        xAxis.translateX(-startPositions.x / 2);
+        xAxis.translateY(-startPositions.y / 2);
+        xAxis.translateZ(-startPositions.z / 2);
+
+        yAxis.translateX(-startPositions.x / 2);
+        yAxis.translateY(-startPositions.y / 2);
+        yAxis.translateZ(-startPositions.z / 2);
+
+        zAxis.translateX(-startPositions.x / 2);
+        zAxis.translateY(-startPositions.y / 2);
+        zAxis.translateZ(-startPositions.z / 2);
+
+        scene.add(xAxis);
+        scene.add(yAxis);
+        scene.add(zAxis);
+
+        /* 3d Object: Grid */
+        var gridWidth = 0.025;
+        var gridMat = new THREE.MeshBasicMaterial({color: 'grey'});
+
+        yChr.forEach( function(e) {
+            var yxGridGeo = new THREE.BoxGeometry( startPositions.x, gridWidth, gridWidth );
+            var yxGrid = new THREE.Mesh( yxGridGeo, gridMat );
+            yxGrid.position.x = (startPositions.x / 2);
+            yxGrid.position.y = e.end;
+            yxGrid.position.z = 0;
+            grid.add(yxGrid);
+
+            var yzGridGeo = new THREE.BoxGeometry (gridWidth, gridWidth, startPositions.z);
+            var yzGrid = new THREE.Mesh( yzGridGeo, gridMat);
+            yzGrid.position.x = 0;
+            yzGrid.position.y = e.end; //(yStartPos / 2);
+            yzGrid.position.z = (startPositions.z / 2);
+            grid.add(yzGrid)
+        });
+
+        xChr.forEach( function(e) {
+            var hGridGeo = new THREE.BoxGeometry( gridWidth, gridWidth, startPositions.z );
+            var hGrid = new THREE.Mesh( hGridGeo, gridMat );
+            hGrid.position.x = e.end;
+            hGrid.position.y = 0;
+            hGrid.position.z = (startPositions.z / 2);
+            grid.add(hGrid);
+
+            var vGridGeo = new THREE.BoxGeometry (gridWidth, startPositions.y, gridWidth);
+            var vGrid = new THREE.Mesh( vGridGeo, gridMat);
+            vGrid.position.x = e.end;
+            vGrid.position.y = (startPositions.y /2);
+            vGrid.position.z = 0;
+            grid.add(vGrid)
+        });
+
+        zChr.forEach( function(e) {
+            var hGridGeo = new THREE.BoxGeometry( startPositions.x, gridWidth, gridWidth );
+            var hGrid = new THREE.Mesh( hGridGeo, gridMat );
+            hGrid.position.x = (startPositions.x / 2);
+            hGrid.position.y = 0;
+            hGrid.position.z = e.end;
+            grid.add(hGrid);
+
+            var vGridGeo = new THREE.BoxGeometry (gridWidth, startPositions.y, gridWidth);
+            var vGrid = new THREE.Mesh( vGridGeo, gridMat);
+            vGrid.position.x = 0;
+            vGrid.position.y = (startPositions.y / 2);
+            vGrid.position.z = e.end;
+            grid.add(vGrid)
+        });
+
+        grid.translateX(-startPositions.x / 2);
+        grid.translateY(-startPositions.y / 2);
+        grid.translateZ(-startPositions.z / 2);
+        scene.add(grid);
+
+        /* 3d Object: 3-Way Comparison */
+        //var dotMat = new THREE.MeshBasicMaterial({color: 'black'});
+        var dotGeo = new THREE.SphereGeometry(0.05);
+        for (x_ch in matches) {
+            for (y_ch in matches[x_ch]) {
+                for (z_ch in matches[x_ch][y_ch]) {
+                    for (index in matches[x_ch][y_ch][z_ch]) {
+                        var coordinate = matches[x_ch][y_ch][z_ch][index];
+                        var xPos = coordinate[0];
+                        var yPos = coordinate[1];
+                        var zPos = coordinate[2];
+                        var logKs = Math.log10(coordinate[3]['mean']['Ks']);
+                        var logKn = Math.log10(coordinate[3]['mean']['Kn']);
+                        var dotMat = new THREE.MeshBasicMaterial({color: getColorFromHist(logKs, logKsBins)});
+                        var dot = new THREE.Mesh (dotGeo, dotMat);
+                        dot.position.x = xChrIndexed[x_ch]['start'] + (xPos * scaleFactor);
+                        dot.position.y = yChrIndexed[y_ch]['start'] + (yPos * scaleFactor);
+                        dot.position.z = zChrIndexed[z_ch]['start'] + (zPos * scaleFactor);
+                        matchDots.add(dot)
+                    }
+                }
+            }
+        }
+
+        matchDots.translateX(-startPositions.x / 2);
+        matchDots.translateY(-startPositions.y / 2);
+        matchDots.translateZ(-startPositions.z / 2);
+        scene.add(matchDots);
+
+    }))));
+
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~ANIMATE LOOP~~~~
+     ----------------------------------------------------------------------------------------------------------------*/
+
+    function animate() {
+        /* Update controls. */
+        controls.update();
+
+        /* Render the scene. */
+        renderer.render( scene, camera );
+
+        /* Create continuous animation. */
+        requestAnimationFrame( animate );
+    }
+    animate();
+
+    /*-----------------------------------------------------------------------------------------------------------------
+     ~~~~WINDOW RESIZE HANDLER~~~~
+     ----------------------------------------------------------------------------------------------------------------*/
+
+    function onWindowResize() {
+        width = window.innerWidth * 0.8; //1500;
+        height = window.innerHeight * 0.9; //1000;
+        renderer.setSize( width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    }
+    window.addEventListener( 'resize', onWindowResize, false );
+
+</script>
+</html>
