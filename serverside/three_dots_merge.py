@@ -331,7 +331,7 @@ def generate_histogram(histo_data):
     for calculation in histo_data:
         log_data[calculation] = {}
         for comparison in histo_data[calculation]:
-            log_data[calculation][comparison] = [math.log(n, 10) for n in histo_data[calculation][comparison]]
+            log_data[calculation][comparison] = [math.log(n, 10) for n in histo_data[calculation][comparison] if n != 0]
 
     # Define 'info' sub-template.
     info_subtmpl = {'min': 0,
@@ -396,14 +396,14 @@ def generate_histogram(histo_data):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # User Inputs
-synt_out = 'chicken_human_mouse.json'
-hist_out = 'chm_histogram.json'
-x = '22736'
-y = '25747'
-z = '7073'
-file1 = '22736_7073_synteny.json'
-file2 = '22736_25747_synteny.json'
-file3 = '25747_7073_synteny.json'
+synt_out = 'human_chimp_orang.json'
+hist_out = 'hco_histogram.json'
+x = '25747'
+y = '11691'
+z = '9642'
+file1 = '11691_9642_synteny.json'
+file2 = '11691_25747_synteny.json'
+file3 = '25747_9642_synteny.json'
 
 # User Options
 parse_file = True

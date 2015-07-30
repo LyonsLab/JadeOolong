@@ -66,6 +66,8 @@
         #histogram {
             margin-top: 10px;
             height: 500px;
+            border: none;
+            background-color: #ffffff;
         }
 
     </style>
@@ -85,6 +87,7 @@
                 <select id="dataset_select">
                     <option value="chm" selected="selected">Chicken/Human/Mouse</option>
                     <option value="chmn">NEW Chicken/Human/Mouse</option>
+                    <option value="hco">Human/Chimpanzee/Orangutan</option>
                 </select>
             </div><br>
             <div class="option_tag">Color Points By:</div>
@@ -140,6 +143,9 @@
             case "chmn":
                 return 'NEW Chicken v. Human v. Mouse';
                 break;
+            case "hco":
+                return "Human v. Chimpanzee v. Orangutan";
+                break;
             default:
                 return 'Visualization Text Not Specified';
         }
@@ -150,7 +156,6 @@
         var bg_slider = $("#bgslider");
         renderDiv.css('background-color', getColor(bg_slider.val()));
         bg_slider.change( function() {
-            console.log(bg_slider.val())
             color = getColor(bg_slider.val());
             renderDiv.css('background-color', color);
         });
@@ -170,7 +175,7 @@
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~SELECT A VISUALIZATION~~~~
      -----------------------------------------------------------------------------------------------------------------*/
-    var visSelect;// = "chm"; // Can be "chm"
+    var visSelect;// = "chm"; // Can be "chm", "chmn", "hco"
     var knKsSelect; // = "Ks"; //Can be "Ks" or "Kn"
     var comparisonSelect; // = "mean"; //Can be "mean", "xy", "xz", or "yz"
     var histToggle = true;
@@ -270,6 +275,16 @@
                     yz_json = './demo_data/parsed_25747_7073_synteny.json';
                     threeway_json = './demo_data/parsed_chicken_human_mouse.json';
                     histogram = './demo_data/parsed_chm_histogram.json';
+                    break;
+                case "hco":
+                    xID = '25747';
+                    yID = '11691';
+                    zID = '9642';
+                    xy_json = './demo_data/parsed_11691_25747_synteny.json';
+                    xz_json = './demo_data/parsed_25747_9642_synteny.json';
+                    yz_json = './demo_data/parsed_11691_9642_synteny.json';
+                    threeway_json = './demo_data/parsed_human_chimp_orang.json';
+                    histogram = './demo_data/parsed_hco_histogram.json';
                     break;
                 default:
                     console.log("No Dataset Selected");
@@ -482,6 +497,7 @@
                 dataType: 'json',
                 success: function(data) {
                     matches = data;
+                    console.log(matches)
                 },
                 error: function(xhr, status, error) {
                     console.log("Threeway JSON Error: " + error)
@@ -589,6 +605,7 @@
 
                 /* 3d Object: 3-Way Comparison */
                 function drawPoints() {
+                    console.log(matches);
                     var dotGeo = new THREE.SphereGeometry(0.05);
                     for (x_ch in matches) {
                         for (y_ch in matches[x_ch]) {
@@ -598,7 +615,8 @@
                                     var xPos = coordinate[0];
                                     var yPos = coordinate[1];
                                     var zPos = coordinate[2];
-                                    var logKnKs = Math.log10(coordinate[3][comparisonSelect][knKsSelect]);
+                                    var knks = coordinate[3][comparisonSelect][knKsSelect];
+                                    var logKnKs = knks != 0 ? Math.log10(knks) : 'NA';
                                     var dotMat = new THREE.MeshBasicMaterial(
                                             {color: getColorFromHist(logKnKs, logKnKsBins)}
                                     );
@@ -622,7 +640,7 @@
                 /* Histogram */
                 function subBin(val, min, max) {
                     var diff = Math.abs(max - min) / 5;
-                    var bins = [min + diff, min+(diff*2), min+(diff*3), min+(diff*4), min+(diff*5)];
+                    var bins = [min + diff, min+(diff*2), min+(diff*3), min+(diff*4), max];
                     if (val <= bins[0]) {
                         return 0;
                     } else if (val <= bins[1]) {
@@ -634,6 +652,8 @@
                     } else if (val <= bins[4]) {
                         return 4;
                     } else {
+                        console.log("value: " + val);
+                        console.log("bins: " + min + '-' + max);
                         console.log("Subbinning Error")
                     }
                 }
