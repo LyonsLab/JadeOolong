@@ -41,15 +41,17 @@
         #rendering {
             margin-top: 0px;
             margin-bottom: 2px;
+            margin-left: 0.5%;
             float: left;
-            width: 70%;
+            width: 69%;
         }
 
         #right {
             margin-top: 0px;
             margin-bottom: 2px;
+            margin-right: 0.5%;
             float: right;
-            width: 30%
+            width: 29.5%
         }
 
         #options {
@@ -63,6 +65,7 @@
         }
         .option_select {
         }
+
         #histogram {
             margin-top: 10px;
             height: 500px;
@@ -86,7 +89,6 @@
             <div class="option_select">
                 <select id="dataset_select">
                     <option value="chm" selected="selected">Chicken/Human/Mouse</option>
-                    <option value="chmn">NEW Chicken/Human/Mouse</option>
                     <option value="hco">Human/Chimpanzee/Orangutan</option>
                 </select>
             </div><br>
@@ -175,7 +177,7 @@
     /*-----------------------------------------------------------------------------------------------------------------
      ~~~~SELECT A VISUALIZATION~~~~
      -----------------------------------------------------------------------------------------------------------------*/
-    var visSelect;// = "chm"; // Can be "chm", "chmn", "hco"
+    var visSelect;// = "chm"; // Can be "chm", "hco"
     var knKsSelect; // = "Ks"; //Can be "Ks" or "Kn"
     var comparisonSelect; // = "mean"; //Can be "mean", "xy", "xz", or "yz"
     var histToggle = true;
@@ -214,6 +216,7 @@
             renderIt();
         });
 
+        //function load here!!
 
         function renderIt() {
             /*---------------------------------------------------------------------------------------------------------
@@ -225,13 +228,7 @@
             /* Setup three.js WebGL renderer */
             var renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true,
                                                       canvas: document.getElementById('canvas')} );
-            // NOTE: Can remove "canvas", but them must uncomment both viscontainer lines below
-
-            /* Place Render in DIV */
-            //visContainer = document.getElementById('canvas'); //REMOVED BY DECLARING CANVAS
-            //document.body.appendChild( visContainer ); //THIS MAY BE USED AT SOME POINT?
             renderer.setSize( width, height);
-            //visContainer.appendChild( renderer.domElement ); //REMOVED BY DECLARING CANVAS
 
             /* Create a three.js scene */
             var scene = new THREE.Scene();
@@ -257,16 +254,6 @@
             var xID, yID, zID, xy_json, xz_json, yz_json, threeway_json, histogram;
             switch(visSelect) {
                 case "chm":
-                    xID = '22736';
-                    yID = '25747';
-                    zID = '7073';
-                    xy_json = './data/parsed_22736_25747_synteny.json';
-                    xz_json = './data/parsed_22736_7073_synteny.json';
-                    yz_json = './data/parsed_25747_7073_synteny.json';
-                    threeway_json = './data/parsed_chicken_human_mouse.json';
-                    histogram = './data/parsed_chm_histogram.json';
-                    break;
-                case "chmn":
                     xID = '22736';
                     yID = '25747';
                     zID = '7073';
@@ -305,7 +292,7 @@
             var zAxis = new THREE.Object3D();
 
             var grid = new THREE.Object3D();
-            var gridToggle = true;
+            //var gridToggle = true; TODO: Reinstate gridToggle
 
             var matches = new Array();
             var matchDots = new THREE.Object3D();
@@ -469,50 +456,64 @@
             /*---------------------------------------------------------------------------------------------------------
              ~~~~GET DATA & CREATE 3D OBJECTS~~~~
              --------------------------------------------------------------------------------------------------------*/
+            function loadXZ() {
+                return $.ajax({
+                               type: 'GET',
+                               url: xz_json,
+                               dataType: 'json',
+                               success: function(data) {
+                                   xChr = data["genomes"][xID]["chromosomes"];
+                                   zChr = data["genomes"][zID]["chromosomes"];
+                               },
+                               error: function(xhr, status, error) {
+                                   console.log("XZ JSON Error: " + error)
+                               }
+                             })
+            }
 
-            $.ajax({
-                type: 'GET',
-                url: xz_json,
-                dataType: 'json',
-                success: function(data) {
-                    xChr = data["genomes"][xID]["chromosomes"];
-                    zChr = data["genomes"][zID]["chromosomes"];
-                },
-                error: function(xhr, status, error) {
-                    console.log("XZ JSON Error: " + error)
-                }
-            }).complete( $.ajax({
-                type: 'GET',
-                url: xy_json,
-                dataType: 'json',
-                success: function(data) {
-                    yChr = data["genomes"][yID]["chromosomes"];
-                },
-                error: function(xhr, status, error) {
-                    console.log("XY JSON Error: " + error)
-                }
-            }).complete($.ajax({
-                type: 'GET',
-                url: threeway_json,
-                dataType: 'json',
-                success: function(data) {
-                    matches = data;
-                    console.log(matches)
-                },
-                error: function(xhr, status, error) {
-                    console.log("Threeway JSON Error: " + error)
-                }
-            }).complete($.ajax({
-                type: 'GET',
-                url: histogram,
-                dataType: 'json',
-                success: function(data) {
-                    histogram_data = data;
-                },
-                error: function(xhr, status, error) {
-                    console.log("Histogram JSON Error: " + error)
-                }
-            }).complete(function() {
+            function loadXY() {
+                return $.ajax({
+                               type: 'GET',
+                               url: xy_json,
+                               dataType: 'json',
+                               success: function(data) {
+                                   yChr = data["genomes"][yID]["chromosomes"];
+                               },
+                               error: function(xhr, status, error) {
+                                   console.log("XY JSON Error: " + error)
+                               }
+                             })
+            }
+
+            function loadThree() {
+                return $.ajax({
+                               type: 'GET',
+                               url: threeway_json,
+                               dataType: 'json',
+                               success: function(data) {
+                                   matches = data;
+                               },
+                               error: function(xhr, status, error) {
+                                   console.log("Threeway JSON Error: " + error)
+                               }
+                             })
+            }
+
+            function loadHistogram() {
+                return $.ajax({
+                               type: 'GET',
+                               url: histogram,
+                               dataType: 'json',
+                               success: function(data) {
+                                   histogram_data = data;
+                               },
+                               error: function(xhr, status, error) {
+                                   console.log("Histogram JSON Error: " + error)
+                               }
+                             })
+            }
+
+            $.when( loadXZ(), loadXY(), loadThree(), loadHistogram()).done( function() {
                 /* Sort and Index Chromosomes */
                 xChr.sort(sortChr);
                 yChr.sort(sortChr);
@@ -605,7 +606,6 @@
 
                 /* 3d Object: 3-Way Comparison */
                 function drawPoints() {
-                    console.log(matches);
                     var dotGeo = new THREE.SphereGeometry(0.05);
                     for (x_ch in matches) {
                         for (y_ch in matches[x_ch]) {
@@ -715,7 +715,7 @@
                 Plotly.Plots.purge(plot);
                 Plotly.plot(plot, histPlotData, histPlotLayout)
 
-            }))));
+            });
 
             /*---------------------------------------------------------------------------------------------------------
              ~~~~ANIMATE LOOP~~~~
