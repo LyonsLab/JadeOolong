@@ -396,14 +396,14 @@ def generate_histogram(histo_data):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # User Inputs
-synt_out = 'human_chimp_orang.json'
-hist_out = 'hco_histogram.json'
-x = '25747'
-y = '11691'
-z = '9642'
-file1 = '11691_9642_synteny.json'
-file2 = '11691_25747_synteny.json'
-file3 = '25747_9642_synteny.json'
+synt_out = 'rapa_oleraceae_capitata.json'
+hist_out = 'roc_histogram.json'
+x = '24668'
+y = '24777'
+z = '25847'
+file1 = '24668_24777_synteny.json'
+file2 = '24668_25847_synteny.json'
+file3 = '24777_25847_synteny.json'
 
 # User Options
 parse_file = True

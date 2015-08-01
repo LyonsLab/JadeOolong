@@ -22,6 +22,13 @@ function getHeaderText(dataSelected) {
 }
 
 $(document).ready( function() {
+    /* Halt scrolling when controlling visualization. */
+    $('#canvas').hover( function() {
+        $("body").css("overflow", "hidden")
+    }, function() {
+        $("body").css("overflow", "scroll")
+    });
+
     /* Change Background Color w/ Slider */
     var renderDiv = $("#rendering");
     var bg_slider = $("#bgslider");
