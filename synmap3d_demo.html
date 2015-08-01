@@ -91,6 +91,7 @@
                 <select id="dataset_select">
                     <option value="chm" selected="selected">Chicken/Human/Mouse</option>
                     <option value="hco">Human/Chimpanzee/Orangutan</option>
+                    <!--<option value="roc">Brassica rapa/B. oleraceae TO1000/B. oleraceae var.capitata</option>-->
                 </select>
             </div><br>
             <div class="option_tag"><label for="knks_select">Color Points By:</label></div>
@@ -290,6 +291,7 @@
          --------------------------------------------------------------------------------------------------------*/
 
         /* Scaling Options */
+        //TODO: Scale dynamically based on size
         var scaleFactor = 0.00000001;
         var axisWidth = 0.05;
 
@@ -315,6 +317,16 @@
                 yz_json = './demo_data/parsed_11691_9642_synteny.json';
                 threeway_json = './demo_data/parsed_human_chimp_orang.json';
                 histogram = './demo_data/parsed_hco_histogram.json';
+                break;
+            case "roc":
+                xID = '24668';
+                yID = '24777';
+                zID = '25847';
+                xy_json = './demo_data/parsed_24668_24777_synteny.json';
+                xz_json = './demo_data/parsed_24668_25847_synteny.json';
+                yz_json = './demo_data/parsed_24777_25847_synteny.json';
+                threeway_json = './demo_data/parsed_rapa_oleraceae_capitata.json';
+                histogram = './demo_data/parsed_roc_histogram.json';
                 break;
             default:
                 console.log("No Dataset Selected");

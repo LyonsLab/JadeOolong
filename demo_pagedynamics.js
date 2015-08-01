@@ -16,6 +16,9 @@ function getHeaderText(dataSelected) {
         case "hco":
             return "Human v. Chimpanzee v. Orangutan";
             break;
+        case "roc":
+            return "Brassica rapa/B. oleraceae TO1000/B. oleraceae var.capitata";
+            break;
         default:
             return 'Visualization Text Not Specified';
     }
