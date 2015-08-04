@@ -66,6 +66,7 @@ def chromosome_parser(xy_input, xz_input, yz_input):
         for genome in to_remove:
             for removal in to_remove[genome]:
                 parsed['genomes'][genome]['chromosomes'].remove(removal)
+                #print "%s: %s removed from %s" % (input_file, removal, genome)
 
         dump(parsed, open(output_file, 'w'))
 
@@ -321,6 +322,17 @@ def find_matches(species_coordinate, link1, link2, link3):
                                             except (TypeError, ValueError):
                                                 pass
 
+    # Remove any empty elements
+    # matches = {xchr: { ychr: { zchr: [matches], ...}, ...} ...}
+    for xchr in matches:
+        for ychr in matches[xchr]:
+            matches[xchr][ychr] = {k: v for k,v in matches[xchr][ychr].items() if len(v) > 0}
+
+    for xchr in matches:
+        matches[xchr] = {k: v for k,v in matches[xchr].items() if len(v) > 0}
+
+    matches = {k: v for k,v in matches.items() if len(v) > 0}
+
     # Return Matches, Match Count, and Histogram Data
     return matches, match_count, hist_data
 
@@ -396,14 +408,14 @@ def generate_histogram(histo_data):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # User Inputs
-synt_out = 'rapa_oleraceae_capitata.json'
-hist_out = 'roc_histogram.json'
-x = '24668'
-y = '24777'
-z = '25847'
-file1 = '24668_24777_synteny.json'
-file2 = '24668_25847_synteny.json'
-file3 = '24777_25847_synteny.json'
+synt_out = 'chicken_human_mouse_NEW.json' #'rapa_oleraceae_capitata.json'
+hist_out = 'chm_histogram_NEW.json' #'roc_histogram.json'
+x = '22736' #'24668'
+y = '25747' #'24777'
+z = '7073' #'25847'
+file1 = '22736_7073_synteny.json' #'24668_24777_synteny.json'
+file2 = '22736_25747_synteny.json' #'24668_25847_synteny.json'
+file3 = '25747_7073_synteny.json' #'24777_25847_synteny.json'
 
 # User Options
 parse_file = True
@@ -431,5 +443,6 @@ json.dump(histogram, open(hist_out, "w"))
 print "You Found %s Matches!" % str(match_number)
 log_ks = histogram['logten']['data']['Ks']['mean']
 log_kn = histogram['logten']['data']['Kn']['mean']
-print "Mean Ks Values Range From %s to %s, with a total size of %s" % (str(min(log_ks)), str(max(log_ks)), str(abs(max(log_ks) - min(log_ks))))
+print "Mean Ks Values Range From %s to %s" % (str(min(log_ks)), str(max(log_ks)))
 print "Mean Kn Values Range From %s to %s" % (str(min(log_kn)), str(max(log_kn)))
+

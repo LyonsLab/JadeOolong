@@ -90,6 +90,7 @@
             <div class="option_select">
                 <select id="dataset_select">
                     <option value="chm" selected="selected">Chicken/Human/Mouse</option>
+                    <option value="chmn" selected="selected">NEW Chicken/Human/Mouse</option>
                     <option value="hco">Human/Chimpanzee/Orangutan</option>
                     <!--<option value="roc">Brassica rapa/B. oleraceae TO1000/B. oleraceae var.capitata</option>-->
                 </select>
@@ -307,6 +308,16 @@
                 yz_json = './demo_data/chm/parsed_25747_7073_synteny.json';
                 threeway_json = './demo_data/chm/parsed_chicken_human_mouse.json';
                 histogram = './demo_data/chm/parsed_chm_histogram.json';
+                break;
+            case "chmn":
+                xID = '22736';
+                yID = '25747';
+                zID = '7073';
+                xy_json = './demo_data/chmn/parsed_22736_25747_synteny.json';
+                xz_json = './demo_data/chmn/parsed_22736_7073_synteny.json';
+                yz_json = './demo_data/chmn/parsed_25747_7073_synteny.json';
+                threeway_json = './demo_data/chmn/parsed_chicken_human_mouse_NEW.json';
+                histogram = './demo_data/chmn/parsed_chm_histogram_NEW.json';
                 break;
             case "hco":
                 xID = '25747';

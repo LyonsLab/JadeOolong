@@ -13,6 +13,9 @@ function getHeaderText(dataSelected) {
         case "chm":
             return 'Chicken v. Human v. Mouse';
             break;
+        case "chmn":
+            return 'NEW Chicken v. Human v. Mouse';
+            break;
         case "hco":
             return "Human v. Chimpanzee v. Orangutan";
             break;
