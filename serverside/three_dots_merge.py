@@ -3,8 +3,6 @@ __author__ = 'senorrift'
 
 import json
 from copy import copy, deepcopy
-import plotly.plotly as py
-from plotly.graph_objs import *
 import math
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
@@ -66,7 +64,6 @@ def chromosome_parser(xy_input, xz_input, yz_input):
         for genome in to_remove:
             for removal in to_remove[genome]:
                 parsed['genomes'][genome]['chromosomes'].remove(removal)
-                #print "%s: %s removed from %s" % (input_file, removal, genome)
 
         dump(parsed, open(output_file, 'w'))
 
@@ -258,12 +255,16 @@ def find_matches(species_coordinate, link1, link2, link3):
 
     # Build Data Structure To Hold 3-Way Matches
     matches = {}
-    for x_chr in xy_data[x_species_id]["chromosomes"]:
-        matches[x_chr["name"]] = {}
-        for y_chr in xy_data[y_species_id]["chromosomes"]:
-            matches[x_chr["name"]][y_chr["name"]] = {}
-            for z_chr in yz_data[z_species_id]["chromosomes"]:
-                matches[x_chr["name"]][y_chr["name"]][z_chr["name"]] = []
+    try:
+        for x_chr in xy_data[x_species_id]["chromosomes"]:
+            matches[x_chr["name"]] = {}
+            for y_chr in xy_data[y_species_id]["chromosomes"]:
+                matches[x_chr["name"]][y_chr["name"]] = {}
+                for z_chr in yz_data[z_species_id]["chromosomes"]:
+                    matches[x_chr["name"]][y_chr["name"]][z_chr["name"]] = []
+    except NameError:
+        print "Coordinate File Error - Check Your Inputs"
+        exit()
 
     # Data Structure to Hold Histogram Information
     hist_data = {"Ks": {"xy": [], "xz": [], "yz": [], 'mean': []},
