@@ -1,26 +1,37 @@
 __author__ = 'senorrift'
+# Dependencies:
 
 from json import dump
+from os import path
 from requests import get
-from sys import argv
+from sys import argv, stderr
 
-api_base = "https://genomevolution.org/coge/api/v1/genomes/"
+# api_base = "https://genomevolution.org/coge/api/v1/genomes/"
+api_base = "https://geco.iplantc.org/asherkhb/coge/api/v1/genomes/"
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Define Input
+# Define Input/Outputs
 # - 1st command line argument.
 # - Synmap Output - must include ks values [this file will end with '.aligncoords.gcoords.ks').
 # ---------------------------------------------------------------------------------------------------------------------
 
+log = {}
+
 # Assign input to variable "synmap_output", raise error and exit if not specified.
 try:
-    synmap_output = argv[1]
+    input_ksfile = argv[1]
+    output_dir = path.dirname(input_ksfile).rstrip("/")
+    #output_dir = argv[2].rstrip("/")
 except IndexError:
-    print "Please specify an input file"
+    log["status"] = "failed"
+    log["message"] = "Error: input/output specification"
+    # TODO: Add Log Dump!
+    stderr.write("dotplot_dots.py failed\n")
+    stderr.write("Error: input/output specification")
     exit()
 
 # Load input into variable "get_values"
-get_values = open(synmap_output, 'r')
+get_values = open(input_ksfile, 'r')
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Define Global Variables
@@ -80,14 +91,12 @@ for line in get_values:
 
         # Species 1: Genome ID, Chromosome, Start, Stop
         id_chr_1 = line_contents[2].lstrip('a').split("_")
-        #print id_chr_1
         tmpl["sp1_id"] = id_chr_1[0]
         if id_chr_1[0] not in sp1_id:
             sp1_id.append(id_chr_1[0])
-        c1 = '_'.join(id_chr_1[1:])
-        tmpl["sp1_ch"] = c1
-        if c1 not in sp1_chromosomes:
-            sp1_chromosomes.append(c1)
+        tmpl["sp1_ch"] = id_chr_1[1]
+        if id_chr_1[1] not in sp1_chromosomes:
+            sp1_chromosomes.append(id_chr_1[1])
         tmpl["sp1_start"] = line_contents[4]
         tmpl["sp1_stop"] = line_contents[5]
 
@@ -96,10 +105,9 @@ for line in get_values:
         tmpl["sp2_id"] = id_chr_2[0]
         if id_chr_2[0] not in sp2_id:
             sp2_id.append(id_chr_2[0])
-        c2 = '_'.join(id_chr_2[1:])
-        tmpl["sp2_ch"] = c2
-        if c2 not in sp2_chromosomes:
-            sp2_chromosomes.append(c2)
+        tmpl["sp2_ch"] = id_chr_2[1]
+        if id_chr_2[1] not in sp2_chromosomes:
+            sp2_chromosomes.append(id_chr_2[1])
         tmpl["sp2_start"] = line_contents[8]
         tmpl["sp2_stop"] = line_contents[9]
 
@@ -108,11 +116,23 @@ for line in get_values:
 
 # Reassign Species ID
 if len(sp1_id) > 1 or len(sp2_id) > 1:
-    print "Genome Error"
+    log["status"] = "failed"
+    log["message"] = "Error: Too many genome IDs"
+    # TODO: Add Log Dump!
+    stderr.write("dotplot_dots.py failed\n")
+    stderr.write("Error: too many genome IDs")
+    exit()
+elif len(sp1_id) < 1 or len(sp2_id) < 1:
+    log["status"] = "failed"
+    log["message"] = "Error: Too few genome IDs"
+    # TODO: Add Log Dump!
+    stderr.write("dotplot_dots.py failed\n")
+    stderr.write("Error: too few genome IDs")
     exit()
 else:
     sp1_id = sp1_id[0]
     sp2_id = sp2_id[0]
+    output_dir = "%s/%s/%s" % (output_dir, str(sp1_id), str(sp2_id))
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Build & Dump Output JSON
@@ -149,8 +169,13 @@ data["genomes"][sp2_id] = sp2_genome_info
 
 
 # Dump "data" to JSON.
-output_filename = "%s_%s_synteny.json" % (sp1_id, sp2_id)
+output_filename = "%s/%s_%s_synteny.json" % (output_dir, sp1_id, sp2_id)
 dump(data, open(output_filename, 'wb'))
 
 # Print concluding message.
-print "%s syntenic pairs identified!\ndotplot_dots.py Complete" % str(len(hits))
+log["status"] = "complete"
+log["message"] = "%s syntenic pairs identified" % str(len(hits))
+log_out = "%s/dotplot_dots_log.json" % output_dir
+dump(log, open(log_out, "wb"))
+
+# print "%s syntenic pairs identified!\ndotplot_dots.py Complete" % str(len(hits))

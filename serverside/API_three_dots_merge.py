@@ -1,11 +1,64 @@
 __author__ = 'senorrift'
 # TODO: Add Kn/Ks Support
 
+import argparse
 import json
 from copy import copy, deepcopy
-import plotly.plotly as py
-from plotly.graph_objs import *
+from os import path
 import math
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+#                                                                                                                     #
+# Parse Command Line Arguments                                                                                        #
+#                                                                                                                     #
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+parser = argparse.ArgumentParser(description="Merge Three SynMaps")
+
+parser.add_argument('-i1',
+                    type=str,
+                    required=True,
+                    help='Path to pairwise SynMap (.gcoords.ks) #1 (Full Path)')
+
+parser.add_argument('-i2',
+                    type=str,
+                    required=True,
+                    help='Path to pairwise SynMap (.gcoords.ks) #2 (Full Path)')
+
+parser.add_argument('-i3',
+                    type=str,
+                    required=True,
+                    help='Path to pairwise SynMap (.gcoords.ks) #3 (Full Path)')
+
+parser.add_argument('-o',
+                    type=str,
+                    required=True,
+                    help="Path to output data folder")
+
+parser.add_argument('-xid',
+                    type=str,
+                    required=True,
+                    help="X Axis Genome ID")
+
+parser.add_argument('-yid',
+                    type=str,
+                    required=True,
+                    help="Y Axis Genome ID")
+
+parser.add_argument('-zid',
+                    type=str,
+                    required=True,
+                    help="Z Axis Genome ID")
+
+parser.add_argument('-P',
+                    action="store_true",
+                    help="Parse (remove chromosomes w/o synteny)")
+
+parser.add_argument('-M',
+                    type=int,
+                    help="Minimum Scaffold Length")
+
+args = parser.parse_args()
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 #                                                                                                                     #
@@ -14,7 +67,7 @@ import math
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 
-def chromosome_parser(xy_input, xz_input, yz_input):
+def chromosome_parser(output_path, xy_input, xz_input, yz_input):
     """ Chromosome Parser
     Given three pairwise SynMap dotplot_dot.pl output JSON files,
     Generate new JSON files containing only chromosomes with synteny.
@@ -53,7 +106,7 @@ def chromosome_parser(xy_input, xz_input, yz_input):
 
     # Produce Parsed Files
     for input_file in inputs:
-        output_file = "parsed_" + input_file
+        output_file = "%s/parsed_%s" % (output_path, path.basename(input_file))
         parsed = load(open(input_file, 'r'))
 
         to_remove = {}
@@ -91,9 +144,10 @@ def get_data(first_sp_id, second_sp_id, json_file):
     # Determine Species Order
     # -----------------------------------------------------------------------------------------------------------------
     species = []
-    json_sps = json_file.lstrip("parsed_").split("_")
+    json_sps = path.basename(json_file).lstrip("parsed_").split("_")
     if first_sp_id in json_sps and second_sp_id in json_sps:
         species = [json_sps[0], json_sps[1]]
+        print species
     else:
         print "File/Species Error: Code 1"
         exit()
@@ -251,9 +305,14 @@ def find_matches(species_coordinate, link1, link2, link3):
     elif x_species_id in link3_spp and z_species_id in link3_spp:
         xz_link = link3
 
+    print xy_link, xz_link, yz_link
+
     # Get coordinate information from each file
+    print "xy"
     xy_x, xy_y, xy_cords, yx_cords = get_data(x_species_id, y_species_id, xy_link)
+    print "xz"
     xz_x, xz_z, xz_cords, zx_cords = get_data(x_species_id, z_species_id, xz_link)
+    print "yz"
     yz_y, yz_z, yz_cords, zy_cords = get_data(y_species_id, z_species_id, yz_link)
 
     # Build Data Structure To Hold 3-Way Matches
@@ -406,28 +465,43 @@ def generate_histogram(histo_data):
 # Main Script                                                                                                         #
 #                                                                                                                     #
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
-
 # User Inputs
-synt_out = 'thaliana_rapa_napus.json'
-hist_out = 'trn_histogram.json'
-x = '25869'
-y = '24777'
-z = '20192'
-file1 = '20192_24777_synteny.json'
-file2 = '20192_25869_synteny.json'
-file3 = '24777_25869_synteny.json'
+x = args.xid
+y = args.yid
+z = args.zid
+file1 = args.i1
+file2 = args.i2
+file3 = args.i3
+ofolder = args.o.rstrip('/')
+synt_out = "%s/%s_%s_%s.json" % (ofolder, x, y, z)
+hist_out = "%s/%s_%s_%s_histogram.json" % (ofolder, x, y, z)
 
-# User Options
-parse_file = True
+parse_file = args.P
+min_length = args.M
+
+# OLD
+#synt_out = 'human_chimp_orang.json' # 'rapa_oleraceae_capitata.json' # 'chicken_human_mouse.json'
+#hist_out = 'hco_histogram.json' # 'roc_histogram.json'# 'chm_histogram.json'
+#x = '25747' # '24668' # '22736'
+#y = '11691' # '25847' # '25747'
+#z = '9642' # '24777' # '7073'
+#file1 = '11691_25747_synteny.json' # '24668_24777_synteny.json' # '22736_7073_synteny.json'
+#file2 = '11691_9642_synteny.json' # '24668_25847_synteny.json' # '22736_25747_synteny.json'
+#file3 = '25747_9642_synteny.json' # '24777_25847_synteny.json' # '25747_7073_synteny.json'
+#parse_file = True
 
 # Option Actions
 if parse_file:
-    chromosome_parser(file1, file2, file3)
-    file1 = "parsed_" + file1
-    file2 = "parsed_" + file2
-    file3 = "parsed_" + file3
+    chromosome_parser(ofolder, file1, file2, file3)
+    file1 = "%s/parsed_%s" % (ofolder, path.basename(file1))
+    file2 = "%s/parsed_%s" % (ofolder, path.basename(file2))
+    file3 = "%s/parsed_%s" % (ofolder, path.basename(file3))
     synt_out = "parsed_" + synt_out
     hist_out = "parsed_" + hist_out
+
+if min_length != None and min_length > 0:
+    # TODO: Make Minimum Length Parser
+    pass
 
 # Execute match finding.
 all_matches, match_number, histogram_data = find_matches([x, y, z], file1, file2, file3)
@@ -436,13 +510,17 @@ all_matches, match_number, histogram_data = find_matches([x, y, z], file1, file2
 histogram = generate_histogram(histogram_data)
 
 # Dump JSONs - matches .
-json.dump(all_matches, open(synt_out, "w"))
-json.dump(histogram, open(hist_out, "w"))
+json.dump(all_matches, open(synt_out, "wb"))
+json.dump(histogram, open(hist_out, "wb"))
 
-# Print Match Number
-print "You Found %s Matches!" % str(match_number)
+# Build Log & Dump to JSON
+log_out = "%s/log.json" % ofolder
 log_ks = histogram['logten']['data']['Ks']['mean']
 log_kn = histogram['logten']['data']['Kn']['mean']
-print "Mean Ks Values Range From %s to %s" % (str(min(log_ks)), str(max(log_ks)))
-print "Mean Kn Values Range From %s to %s" % (str(min(log_kn)), str(max(log_kn)))
 
+log = {}
+log["status"] = "complete"
+log["matches"] = str(match_number)
+log["ks"] = {"min": str(min(log_ks)), "max": str(max(log_ks))}
+log["kn"] = {"min": str(min(log_kn)), "max": str(max(log_kn))}
+json.dump(log, open(log_out, 'wb'))
