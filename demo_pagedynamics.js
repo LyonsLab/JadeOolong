@@ -10,17 +10,20 @@ function getBackgroundColor(slideValue) {
 
 function getHeaderText(dataSelected) {
     switch (dataSelected) {
-        case "chm":
-            return 'Chicken v. Human v. Mouse';
-            break;
-        case "chmn":
-            return 'NEW Chicken v. Human v. Mouse';
-            break;
         case "hco":
             return "Human v. Chimpanzee v. Orangutan";
             break;
+        case "chm":
+            return 'Chicken v. Human v. Mouse';
+            break;
+        case "ctz":
+            return 'Chicken v. Turkey v. Zebra Finch';
+            break;
+        case "trn":
+            return 'A. thaliana v. B. rapa v. B. napus';
+            break;
         case "roc":
-            return "Brassica rapa/B. oleraceae TO1000/B. oleraceae var.capitata";
+            return "B. rapa v. B. oleraceae TO1000 v. B. oleraceae var.capitata";
             break;
         default:
             return 'Visualization Text Not Specified';

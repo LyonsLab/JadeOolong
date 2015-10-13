@@ -81,6 +81,7 @@
 <h1>3D Synteny Demo: <span id="current_demo"></span></h1>
 <div id="data">
     <div id="rendering" class="contentBox">
+        <span id="loading"></span>
         <canvas id="canvas"></canvas>
     </div>
 
@@ -89,10 +90,11 @@
             <div class="option_tag"><label for="dataset_select">Select Visualization:</label></div>
             <div class="option_select">
                 <select id="dataset_select">
-                    <option value="chm" selected="selected">Chicken/Human/Mouse</option>
-                    <option value="chmn" selected="selected">NEW Chicken/Human/Mouse</option>
                     <option value="hco">Human/Chimpanzee/Orangutan</option>
-                    <!--<option value="roc">Brassica rapa/B. oleraceae TO1000/B. oleraceae var.capitata</option>-->
+                    <option value="chm" selected="selected">Chicken/Human/Mouse</option>
+                    <option value="ctz">Chicken/Turkey/Zebra Finch</option>
+                    <option value="trn">SLOW A.thaliana/B.rapa/B.napus</option>
+                    <option value="roc">SLOW B.rapa/B.oleracea T01000/B.oleraceae capitata</option>
                 </select>
             </div><br>
             <div class="option_tag"><label for="knks_select">Color Points By:</label></div>
@@ -309,15 +311,25 @@
                 threeway_json = './demo_data/chm/parsed_chicken_human_mouse.json';
                 histogram = './demo_data/chm/parsed_chm_histogram.json';
                 break;
-            case "chmn":
+            case "trn":
+                xID = '25869';
+                yID = '24777';
+                zID = '20192';
+                xy_json = './demo_data/trn/parsed_24777_25869_synteny.json';
+                xz_json = './demo_data/trn/parsed_20192_25869_synteny.json';
+                yz_json = './demo_data/trn/parsed_20192_24777_synteny.json';
+                threeway_json = './demo_data/trn/parsed_thaliana_rapa_napus.json';
+                histogram = './demo_data/trn/parsed_trn_histogram.json';
+                break;
+            case "ctz":
                 xID = '22736';
-                yID = '25747';
-                zID = '7073';
-                xy_json = './demo_data/chmn/parsed_22736_25747_synteny.json';
-                xz_json = './demo_data/chmn/parsed_22736_7073_synteny.json';
-                yz_json = './demo_data/chmn/parsed_25747_7073_synteny.json';
-                threeway_json = './demo_data/chmn/parsed_chicken_human_mouse_NEW.json';
-                histogram = './demo_data/chmn/parsed_chm_histogram_NEW.json';
+                yID = '11338';
+                zID = '6825';
+                xy_json = './demo_data/ctz/parsed_11338_22736_synteny.json';
+                xz_json = './demo_data/ctz/parsed_22736_6825_synteny.json';
+                yz_json = './demo_data/ctz/parsed_11338_6825_synteny.json';
+                threeway_json = './demo_data/ctz/parsed_chicken_turkey_zebrafinch.json';
+                histogram = './demo_data/ctz/parsed_ctz_histogram.json';
                 break;
             case "hco":
                 xID = '25747';
